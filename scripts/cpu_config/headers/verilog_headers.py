@@ -167,7 +167,7 @@ endpackage
 
                 mod_data_i_assignments_joined = "\n    ".join(mod_data_i_assignments)
 
-                if num_ports <= 1: #If num_ports 1 or less, no need for a mux
+                if num_ports < 1: #If num_ports less than 1, then dont output
                     continue
 
                 # Documentation
