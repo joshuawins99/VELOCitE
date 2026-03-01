@@ -1,7 +1,7 @@
 import os
 import re
 
-from cpu_config_helpers import sanitize_identifier
+from cpu_config_helpers import sanitize_identifier, strip_repeat_suffix
 from registers import reorder_tree
 
 def export_zig_headers(parsed_configs, submodule_reg_map, directory_path, reg_width_bytes=4, user_modules_only=False):
@@ -50,28 +50,28 @@ pub const Register = struct {
     }
 
     pub inline fn write32(self: Register, val: u32) void {
-        if (self.perm == .ReadOnly)
+        if (@inComptime() and self.perm == .ReadOnly)
             @compileError("Attempt to write to a read-only register");
         const ptr: *volatile u32 = @ptrFromInt(self.addr());
         ptr.* = val;
     }
 
     pub inline fn read32(self: Register) u32 {
-        if (self.perm == .WriteOnly)
+        if (@inComptime() and self.perm == .WriteOnly)
             @compileError("Attempt to read from a write-only register");
         const ptr: *volatile u32 = @ptrFromInt(self.addr());
         return ptr.*;
     }
 
     pub inline fn write8(self: Register, val: u8) void {
-        if (self.perm == .ReadOnly)
+        if (@inComptime() and self.perm == .ReadOnly)
             @compileError("Attempt to write to a read-only register");
         const ptr: *volatile u8 = @ptrFromInt(self.addr());
         ptr.* = val;
     }
 
     pub inline fn read8(self: Register) u8 {
-        if (self.perm == .WriteOnly)
+        if (@inComptime() and self.perm == .WriteOnly)
             @compileError("Attempt to read from a write-only register");
         const ptr: *volatile u8 = @ptrFromInt(self.addr());
         return ptr.*;
@@ -131,13 +131,15 @@ pub const Register = struct {
                         zig_lines.append(f"const {module_id.lower()} = struct {{")
                     else:
                         zig_lines.append(f"pub const {module_id.lower()} = struct {{")
-                    for idx, entry in enumerate(current_submodule_map):
+                    for entry in current_submodule_map:
                         if entry.module_parent == module_name:
                             full_submodule_name = entry.module_name
                             sub_module = str(full_submodule_name.split(entry.separator)[-1])
                             zig_lines.append(f"    pub const {sub_module} = {full_submodule_name};")
                     zig_lines.append(f"    pub const block = CompactRegisterBlock.init(0x{start_addr:04X}, {reg_count}, {reg_width_bytes});")
                     modified_range_reg_count = max(1, reg_count - subregisters)
+                    reg_list = []
+                    instance_lines = []
                     for i in range(modified_range_reg_count):
                         reg_key = f"Reg{i}"
                         reg_info = module.get("regs", {}).get(reg_key, {})
@@ -156,40 +158,60 @@ pub const Register = struct {
                             reg_perm_zig = "ReadWrite"
                         if i < (reg_count-subregisters)-1 and (reg_count-subregisters) > 0:
                             zig_lines.append(f"    pub const {reg_name_id.lower()} = Register{{ .block = block, .offset = {i}, .perm = .{reg_perm_zig} }};")
+                            reg_list.append(reg_name_id.lower())
                         else:
                             if (reg_count-subregisters) > 0:
                                 zig_lines.append(f"    pub const {reg_name_id.lower()} = Register{{ .block = block, .offset = {i}, .perm = .{reg_perm_zig} }};")
+                                reg_list.append(reg_name_id.lower())
+                            if not mod_repeat_inst:
+                                instance_lines.append(f"const {module_name}_type = struct {{")
+                                instance_lines.append(f"    block: CompactRegisterBlock,")
+                                for entry in reg_list:
+                                    instance_lines.append(f"    {entry}: Register,")
+                                instance_lines[-1] = instance_lines[-1].replace(",", "") #Remove comma from last entry
+                                instance_lines.append(f"}};\n")
+                            zig_lines.append(f"    const instance = {strip_repeat_suffix(module_name)}_type {{")
+                            zig_lines.append(f"        .block = block,")
+                            for entry in reg_list:
+                                zig_lines.append(f"        .{entry} = {entry},")
+                            zig_lines[-1] = zig_lines[-1].replace(",", "") #Remove comma from last entry
+                            zig_lines.append(f"    }};")
                             zig_lines.append(f"}};\n")
+                            zig_lines.extend(instance_lines)
                 else:
                     zig_lines.append(f"pub const {module_id.lower()} = struct {{")
                     zig_lines.append(f"    pub const block = CompactRegisterBlock.init(0x{start_addr:04X}, {reg_count}, {reg_width_bytes});")
                     zig_lines.append(f" }};\n")
 
                 #Generate Repeat Module Arrays
-                if not mod_repeat_info.get("value", {}) and subregisters > 0:
-                    adding_array = 0
-                    for entry in current_submodule_map:
-                        if entry.module_parent == module_name and cpu_config.get(section, {}).get(entry.module_name).get("repeat", {}).get("value", None):
-                            if adding_array == 0:
-                                zig_lines.append(f"// Repeat Instance Iterable Array(s) of {entry.module_parent}")
-                            module_name_stripped = entry.module_name.split(entry.separator)[-1]
-                            base_module_match = re.match(r"(.+?)(?:_\d+)?$", module_name_stripped)
-                            base_module = base_module_match.group(1)
-                            if module_name_stripped == base_module:
-                                array_name = entry.module_name.split(entry.separator)[-1]
-                                array_count = array_mask.count(array_name)
-                                array_iterator = f"_{array_count}" if array_count != 0 else ""
-                                zig_lines.append(f"pub const {array_name}_array{array_iterator} = [_]type {{")
-                                array_mask.append(array_name)
-                                adding_array = 1
-                                for entry in current_submodule_map:
-                                    if entry.module_parent == module_name and cpu_config.get(section, {}).get(entry.module_name).get("repeat", {}).get("value", None) and adding_array == 1:
-                                        module_name_stripped = entry.module_name.split(entry.separator)[-1]
-                                        if module_name_stripped == base_module or module_name_stripped.startswith(base_module + "_"):
-                                            zig_lines.append(f"    {entry.module_name},")
-                                if adding_array == 1:
-                                    zig_lines[-1] = zig_lines[-1].replace(",", "") #Remove comma from last entry
-                                    zig_lines.append(f"}};\n")
+                array_lines = []
+                repeat_array_count = 0
+                adding_array = 0
+                for entry in current_submodule_map:
+                    if entry.module_parent == module_name:
+                        if adding_array == 0:
+                            array_lines.append(f"// Repeat Instance Iterable Array(s) of {entry.module_parent}")
+                        module_name_stripped = entry.module_name.split(entry.separator)[-1]
+                        base_module_match = re.match(r"(.+?)(?:_\d+)?$", module_name_stripped)
+                        base_module = base_module_match.group(1)
+                        if module_name_stripped == base_module:
+                            array_name = entry.module_name.split(entry.separator)[-1]
+                            array_count = array_mask.count(array_name)
+                            array_iterator = f"_{array_count}" if array_count != 0 else ""
+                            array_lines.append(f"pub const {array_name}_array{array_iterator} = [_]{entry.module_name}_type {{")
+                            array_mask.append(array_name)
+                            adding_array = 1
+                            for entry in current_submodule_map:
+                                if entry.module_parent == module_name and cpu_config.get(section, {}).get(entry.module_name).get("repeat", {}).get("value", None) != None and adding_array == 1:
+                                    module_name_stripped = entry.module_name.split(entry.separator)[-1]
+                                    if module_name_stripped == base_module or module_name_stripped.startswith(base_module + "_"):
+                                        array_lines.append(f"    {entry.module_name}.instance,")
+                                        repeat_array_count += 1
+                            if adding_array == 1:
+                                array_lines[-1] = array_lines[-1].replace(",", "") #Remove comma from last entry
+                                array_lines.append(f"}};\n")
+                if repeat_array_count >= 1:
+                    zig_lines.extend(array_lines)
         
         with open(zig_filename, "w") as f:
             f.write("\n".join(zig_lines))

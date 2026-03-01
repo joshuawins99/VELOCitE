@@ -8,6 +8,10 @@ import os
 def sanitize_identifier(text):
         return re.sub(r'\W+', '_', text.strip()).upper()
 
+def strip_repeat_suffix(name):
+    parts = name.rsplit("_", 1)
+    return parts[0] if parts[-1].isdigit() else name
+
 def get_code_folders(parsed_configs):
     """Extracts CODE_FOLDER values from the parsed configs if present."""
     code_folders = {}
@@ -305,10 +309,6 @@ def compute_config_submodules(config_data, submodule_identifier):
                 for nk, nv in new_items.items():
                     out[nk] = nv
         return out
-    
-    def strip_repeat_suffix(name):
-        parts = name.rsplit("_", 1)
-        return parts[0] if parts[-1].isdigit() else name
 
     #Account for Repeat entries in modules
     for repeat_module, repeat_count in repeat_dict_initial_sorted_filtered.items():
