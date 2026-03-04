@@ -52,7 +52,7 @@ import cpu_reg_package::*;
     assign reset_i                   = cpubus.reset_i;
     assign irq_i                     = cpubus.irq_i;
     assign cpubus.data_o             = cpu_data_o;
-    assign data_reg_inputs_interface = cpubus.data_i;
+    assign data_reg_inputs_interface = cpubus.data_i_cpu;
     assign cpubus.we_o               = cpu_we_o;
     assign cpubus.address_o          = address;
     assign cpubus.cpu_reset_o        = reset;

@@ -88,7 +88,7 @@ module main_tb;
     assign cpubus.cpu_reset_o = reset;
 
     assign cpubus.data_o    = cpu_data_o;
-    assign cpu_data_i       = cpubus.data_i;
+    assign cpu_data_i       = cpubus.data_i_cpu;
     assign cpubus.address_o = address;
     assign cpu_halt_i       = cdc_busy; 
     assign cpubus.we_o      = we_o;
@@ -132,10 +132,10 @@ module main_tb;
         if (cdc_cpubus[test_cdc_e].we_o == 1'b0) begin
             unique case (cdc_cpubus[test_cdc_e].address_o)
                 get_address_start(test_cdc_e) : begin
-                    cdc_cpubus[test_cdc_e].data_i[test_cdc_e] <= test_cdc_register;
+                    cdc_cpubus[test_cdc_e].data_i <= test_cdc_register;
                 end
                 default : begin
-                    cdc_cpubus[test_cdc_e].data_i[test_cdc_e] <= '0;
+                    cdc_cpubus[test_cdc_e].data_i <= '0;
                 end
             endcase
         end
@@ -158,10 +158,10 @@ module main_tb;
         if (cdc_cpubus[test_cdc2_e].we_o == 1'b0) begin
             unique case (cdc_cpubus[test_cdc2_e].address_o)
                 get_address_start(test_cdc2_e) : begin
-                    cdc_cpubus[test_cdc2_e].data_i[test_cdc2_e] <= test_cdc2_register;
+                    cdc_cpubus[test_cdc2_e].data_i <= test_cdc2_register;
                 end
                 default : begin
-                    cdc_cpubus[test_cdc2_e].data_i[test_cdc2_e] <= '0;
+                    cdc_cpubus[test_cdc2_e].data_i <= '0;
                 end
             endcase
         end

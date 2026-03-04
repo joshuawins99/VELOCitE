@@ -108,15 +108,10 @@ import cpu_test_package::*;
     output logic        pwm_o
 )
 
-    localparam bypass_config_t bypass_config = '0;
-    localparam logic [num_entries-1:0] cdc_bypass_mask = build_bypass_mask(bypass_config);
-    localparam logic [num_entries-1:0] module_busy_en_mask = build_busy_mask(bypass_config);
-
     cpu_test_bus_rv32 cdc_cpubus [num_entries]();
 
     cpu_test_cdc_top #(
-        .cdc_bypass_mask     (cdc_bypass_mask),
-        .module_busy_en_mask (module_busy_en_mask)
+        .bypass_config       ('0)
     ) m1 (
         .clk_i               (clk_i),
         .reset_i             ('0),
@@ -141,7 +136,7 @@ import cpu_test_package::*;
         .reset_i       (cdc_cpubus[pwm_e].cpu_reset_o),
         .address_i     (cdc_cpubus[pwm_e].address_o),
         .data_i        (cdc_cpubus[pwm_e].data_o),
-        .data_o        (cdc_cpubus[pwm_e].data_i[pwm_e]),
+        .data_o        (cdc_cpubus[pwm_e].data_i),
         .rd_wr_i       (cdc_cpubus[pwm_e].we_o),
         .pwm_o         (pwm_o)
     );

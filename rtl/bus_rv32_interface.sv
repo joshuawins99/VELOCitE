@@ -4,7 +4,8 @@ import cpu_reg_package::*;
     logic                     clk_i;
     logic                     reset_i;
     logic [address_width-1:0] address_o;
-    data_reg_inputs_t         data_i;
+    data_reg_inputs_t         data_i_cpu;
+    logic [data_width-1:0]    data_i;
     logic                     we_o;
     logic [3:0]               we_ram_o;
     logic [data_width-1:0]    data_o;
@@ -22,7 +23,7 @@ import cpu_reg_package::*;
         input  clk_i,
         input  reset_i,
         input  address_o,
-        output data_i,
+        output data_i_cpu,
         input  we_o,
         input  we_ram_o,
         input  data_o,
@@ -40,7 +41,7 @@ import cpu_reg_package::*;
         input  clk_i,
         input  reset_i,
         output address_o,
-        input  data_i,
+        input  data_i_cpu,
         output we_o,
         output we_ram_o,
         output data_o,
@@ -57,7 +58,7 @@ import cpu_reg_package::*;
     modport cdc_in (
         input  clk_i,
         input  address_o,
-        output data_i,
+        output data_i_cpu,
         input  we_o,
         input  we_ram_o,
         input  data_o,

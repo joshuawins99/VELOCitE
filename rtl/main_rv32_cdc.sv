@@ -52,7 +52,7 @@ import cpu_reg_package::*;
             assign cdc_cpubus[i].we_o                   = cdc_cpubus_internal[i].we_o;
             assign cdc_cpubus[i].we_ram_o               = cdc_cpubus_internal[i].we_ram_o;
             assign cdc_cpubus_internal[i].module_busy_i = cdc_cpubus[i].module_busy_i;
-            assign cdc_cpubus_internal[i].data_i[i]     = cdc_cpubus[i].data_i[i];
+            assign cdc_cpubus_internal[i].data_i        = cdc_cpubus[i].data_i;
         end
     endgenerate
 

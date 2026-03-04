@@ -83,7 +83,7 @@ import cpu_reg_package::*;
         for (i = start_num_entry_index; i <= end_num_entry_index; i++) begin : bus_cdc_inst_gen  
             if (cdc_bypass_mask[i] == 1) begin //Bypass synchronization for straight passthrough
                 assign cpubus_o[i].clk_i       = cpuside_clk;
-                assign cpubus_i.data_i[i]      = cpubus_o[i].data_i[i];
+                assign cpubus_i.data_i_cpu[i]  = cpubus_o[i].data_i;
                 assign cpubus_o[i].we_o        = cpubus_i.we_o;
                 assign cpubus_o[i].we_ram_o    = cpubus_i.we_ram_o;
                 assign cpubus_o[i].address_o   = cpubus_i.address_o;
@@ -178,13 +178,13 @@ import cpu_reg_package::*;
                 //Register output of data to the cpu in order to have the data valid when the halt lifts.
                 always_ff @(posedge cpuside_clk) begin
                     if (data_module_to_cpu_synced_valid[i] == 1'b1) begin
-                        cpubus_i.data_i[i] <= data_module_to_cpu_synced[i].data;
+                        cpubus_i.data_i_cpu[i] <= data_module_to_cpu_synced[i].data;
                     end else begin
-                        cpubus_i.data_i[i] <= '0;
+                        cpubus_i.data_i_cpu[i] <= '0;
                     end
                 end
 
-                assign data_module_to_cpu[i].data    = cpubus_o[i].data_i[i];
+                assign data_module_to_cpu[i].data    = cpubus_o[i].data_i;
                 assign data_module_to_cpu[i].address = '0;
                 assign data_module_to_cpu[i].we      = '0;
                 assign data_module_to_cpu[i].we_ram  = '0;

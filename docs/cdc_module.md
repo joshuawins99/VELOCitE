@@ -50,7 +50,7 @@ module cpu_with_cdc_test (
         .reset_i       (cdc_cpubus[user_module_1_e].cpu_reset_o),
         .address_i     (cdc_cpubus[user_module_1_e].address_o),
         .data_i        (cdc_cpubus[user_module_1_e].data_o),
-        .data_o        (cdc_cpubus[user_module_1_e].data_i[user_module_1_e]),
+        .data_o        (cdc_cpubus[user_module_1_e].data_i),
         .rd_wr_i       (cdc_cpubus[user_module_1_e].we_o)
     );
 
@@ -64,7 +64,7 @@ module cpu_with_cdc_test (
         .reset_i       (cdc_cpubus[user_module_2_e].cpu_reset_o),
         .address_i     (cdc_cpubus[user_module_2_e].address_o),
         .data_i        (cdc_cpubus[user_module_2_e].data_o),
-        .data_o        (cdc_cpubus[user_module_2_e].data_i[user_module_2_e]),
+        .data_o        (cdc_cpubus[user_module_2_e].data_i),
         .rd_wr_i       (cdc_cpubus[user_module_2_e].we_o),
         .busy_o        (cdc_cpubus[user_module_2_e].module_busy_i)
     );
