@@ -146,8 +146,8 @@ endmodule
 It must also be added to cpu_config.txt, so a pwm_e entry will be added to user modules.
 ```
 USER_MODULES:
-pwm_e : TRUE : AUTO
-        Module_Include : pwm_generator.sv
+    pwm_e : TRUE : AUTO
+            Module_Include : pwm_generator.sv
 ```
 Now it can be accessed like this in the Python side using the ```new-python``` headers.
 ```Python
