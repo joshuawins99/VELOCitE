@@ -1,8 +1,7 @@
 module main_rv32_cdc
 import cpu_reg_package::*;
 #(
-    parameter logic [num_entries-1:0] cdc_bypass_mask,
-    parameter logic [num_entries-1:0] module_busy_en_mask
+    parameter bypass_config_t bypass_config
 )(
     input  logic                  clk_i,
     input  logic                  reset_i,
@@ -16,6 +15,9 @@ import cpu_reg_package::*;
     input  logic                  cdc_clks_i [num_entries],
     bus_rv32.cdc_out              cdc_cpubus [num_entries]
 );
+
+    localparam logic [num_entries-1:0] cdc_bypass_mask = build_bypass_mask(bypass_config);
+    localparam logic [num_entries-1:0] module_busy_en_mask = build_busy_mask(bypass_config);
 
     logic cdc_busy;
 

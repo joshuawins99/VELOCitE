@@ -15,22 +15,17 @@ module cpu_with_cdc_test (
 
     assign cdc_clocks[user_module_1_e] = clk_30; //One clock
 
+    //For modules with the cdc bypass option checked, the main system clock will be automatically assigned
     localparam bypass_config_t bypass_config = {
         //add_cdc_entry(enum, cdc bypass, busy enable)
         add_cdc_entry(user_module_1_e,  0, 0),
         add_cdc_entry(user_module_2_e,  1, 1)
     };
 
-    //For modules with the cdc bypass option checked, the main system clock will be automatically assigned
-
-    localparam logic [num_entries-1:0] cdc_bypass_mask = build_bypass_mask(bypass_config);
-    localparam logic [num_entries-1:0] module_busy_en_mask = build_busy_mask(bypass_config);
-
     cpu_test_bus_rv32 cdc_cpubus [num_entries]();
 
     cpu_test_cdc_top #(
-        .cdc_bypass_mask     (cdc_bypass_mask),
-        .module_busy_en_mask (module_busy_en_mask)
+        .bypass_config       (bypass_config)
     ) m1 (
         .clk_i               (clk_i),
         .reset_i             (reset_i),
@@ -38,6 +33,7 @@ module cpu_with_cdc_test (
         .external_data_o     (),
         .uart_rx_i           (uart_rx_i),
         .uart_tx_o           (uart_tx_o),
+        .uart_rts_o          (),
         .irq_i               ('0),
         .external_cpu_halt_i ('0),
         .cdc_clks_i          (cdc_clocks),
