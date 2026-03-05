@@ -82,7 +82,7 @@ import cpu_reg_package::*;
     generate
         for (i = start_num_entry_index; i <= end_num_entry_index; i++) begin : bus_cdc_inst_gen  
             if (cdc_bypass_mask[i] == 1) begin //Bypass synchronization for straight passthrough
-                assign cpubus_o[i].clk_i       = cpuside_clk;
+                assign cpubus_o[i].clk_o       = cpuside_clk;
                 assign cpubus_i.data_i_cpu[i]  = cpubus_o[i].data_i;
                 assign cpubus_o[i].we_o        = cpubus_i.we_o;
                 assign cpubus_o[i].we_ram_o    = cpubus_i.we_ram_o;
@@ -189,7 +189,7 @@ import cpu_reg_package::*;
                 assign data_module_to_cpu[i].we      = '0;
                 assign data_module_to_cpu[i].we_ram  = '0;
 
-                assign cpubus_o[i].clk_i             = cdc_clks_i[i];
+                assign cpubus_o[i].clk_o             = cdc_clks_i[i];
                 assign cpubus_o[i].cpu_reset_o       = moduleside_cpu_reset[i];
 
                 //Pulse bus signals in clk_dst_i domain to act the same as in main clk domain.

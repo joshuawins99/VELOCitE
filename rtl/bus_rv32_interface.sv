@@ -2,6 +2,7 @@ interface bus_rv32;
 import cpu_reg_package::*;
 
     logic                     clk_i;
+    logic                     clk_o;
     logic                     reset_i;
     logic [address_width-1:0] address_o;
     data_reg_inputs_t         data_i_cpu;
@@ -66,7 +67,7 @@ import cpu_reg_package::*;
     );
 
     modport cdc_out (
-        output clk_i,
+        output clk_o,
         output address_o,
         input  data_i,
         output we_o,

@@ -46,7 +46,7 @@ module cpu_with_cdc_test (
         .address_width (address_width),
         .data_width    (data_width)
     ) test_mod_1 (
-        .clk_i         (cdc_cpubus[user_module_1_e].clk_i),
+        .clk_i         (cdc_cpubus[user_module_1_e].clk_o),
         .reset_i       (cdc_cpubus[user_module_1_e].cpu_reset_o),
         .address_i     (cdc_cpubus[user_module_1_e].address_o),
         .data_i        (cdc_cpubus[user_module_1_e].data_o),
@@ -60,7 +60,7 @@ module cpu_with_cdc_test (
         .address_width (address_width),
         .data_width    (data_width)
     ) test_mod_2 (
-        .clk_i         (cdc_cpubus[user_module_2_e].clk_i),
+        .clk_i         (cdc_cpubus[user_module_2_e].clk_o),
         .reset_i       (cdc_cpubus[user_module_2_e].cpu_reset_o),
         .address_i     (cdc_cpubus[user_module_2_e].address_o),
         .data_i        (cdc_cpubus[user_module_2_e].data_o),

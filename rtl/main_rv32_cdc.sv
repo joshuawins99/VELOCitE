@@ -45,7 +45,7 @@ import cpu_reg_package::*;
     genvar i;
     generate
         for (i = 0; i < num_entries; i++) begin : internal_cpubus_mapping_inst
-            assign cdc_cpubus[i].clk_i                  = cdc_cpubus_internal[i].clk_i;
+            assign cdc_cpubus[i].clk_o                  = cdc_cpubus_internal[i].clk_o;
             assign cdc_cpubus[i].cpu_reset_o            = cdc_cpubus_internal[i].cpu_reset_o;
             assign cdc_cpubus[i].address_o              = cdc_cpubus_internal[i].address_o;
             assign cdc_cpubus[i].data_o                 = cdc_cpubus_internal[i].data_o;

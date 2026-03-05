@@ -132,7 +132,7 @@ import cpu_test_package::*;
         .FPGAClkSpeed  (FPGAClkSpeed),
         .PWMFreq       (200000)
     ) pwm_1 (
-        .clk_i         (cdc_cpubus[pwm_e].clk_i),
+        .clk_i         (cdc_cpubus[pwm_e].clk_o),
         .reset_i       (cdc_cpubus[pwm_e].cpu_reset_o),
         .address_i     (cdc_cpubus[pwm_e].address_o),
         .data_i        (cdc_cpubus[pwm_e].data_o),
