@@ -202,13 +202,14 @@ def resolve_all_expressions(config_data):
         if section in ["BUILTIN_MODULES", "USER_MODULES"]:
             for module, module_data in data.items():
                 current_repeat = module_data.get("repeat", {})
+                repeat_str = current_repeat.get("value", 0)
                 if current_repeat:
                     repeat_num = resolve_expression(current_repeat.get("value", 0), parameters_list)
                     try:
                         if not repeat_num%1 == 0:
-                            raise ValueError(f"Repeat Count for '{module}' doesn't resolve to an integer")
+                            raise ValueError(f"Repeat Count '{repeat_str}' for '{module}' doesn't resolve to an integer")
                     except:
-                        raise ValueError(f"Repeat Count for '{module}' doesn't resolve to an integer")
+                        raise ValueError(f"Repeat Count '{repeat_str}' for '{module}' doesn't resolve to an integer")
                     working_config_data[section][module]["repeat"]["value"] = int(repeat_num)
 
     #Resolve Field Bounds
