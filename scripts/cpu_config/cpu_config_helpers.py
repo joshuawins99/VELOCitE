@@ -399,3 +399,19 @@ def compute_config_submodules(config_data, submodule_identifier):
         config_data[section][base]["subregisters"] = total - native
 
     return config_data, submodule_reg_add_map_sorted
+
+def merge_dictionary_into_master(master, incoming):
+    """
+    Merge `incoming` into `master` without overwriting existing entries.
+    Nested dictionaries are merged recursively.
+    """
+    for key, value in incoming.items():
+        if key not in master:
+            # Key doesn't exist → add it directly
+            master[key] = value
+        else:
+            # Key exists → only merge if both sides are dicts
+            if isinstance(master[key], dict) and isinstance(value, dict):
+                merge_dictionary_into_master(master[key], value)
+            # Otherwise: do nothing (master wins)
+    return master

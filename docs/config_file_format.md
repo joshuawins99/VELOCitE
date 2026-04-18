@@ -14,6 +14,32 @@ Parameters can be configured a number of ways:
 * With a bit width:
     * ```BitMask : 'h80 : {15:0}```
 
+## Config_Include
+The Config_Include keyword is used to import another config file into the main one. This acts like a merging of the two files. Any parameters that are the same will be prioritized in the top level config file. This is useful for a submodule component where multiple parameters or multiple different configurations of the submodule can be stored in a config and then included into the main cpu config without manually typing out each entry.
+
+In the top level config:
+```
+CONFIG_PARAMETERS:
+    Component_Dir : ../../component_dir/rtl
+    Config_Include : {Component_Dir}/../example_component.cfg
+```
+
+In example_component.cfg:
+```
+CONFIG_PARAMETERS:
+
+BUILTIN_PARAMETERS:
+
+USER_PARAMETERS:
+    ExampleParameter : 2
+
+BUILTIN_MODULES:
+    
+USER_MODULES:
+    component_top_e : TRUE : AUTO
+        Module_Include : rtl/component_top.sv
+```
+
 ## Module Blocks
 USER_MODULES can optionally have a base address eg. USER_MODULES: 'h9000
 
@@ -32,7 +58,7 @@ Module instantiations have a few modes they can be instantiated with:
 
 Module instantiations require either TRUE or FALSE as part of the second argument. This indicates on whether it should be included in the system. Setting to FALSE effectively disables it.
 
-Optionally, a ```NOEXPREGS``` can be added if the desire is to treat the group as a block of memory with no distinct registers that is used like this: ```my_module_e : TRUE : AUTO : NOEXPREGS```
+Optionally, a ```NOEXPREGS``` can be added if the desire is to treat the group as a block of memory with no distinct registers: ```my_module_e : TRUE : AUTO : NOEXPREGS```
 
 ## Registers, Names, Descriptions, and Permissions
 Every module and register can have a name and description. Registers can also have a permissions entry. These provide data to the system in order to automatically assign addresses and to generate rich headers with the names and descriptions included. An example is shown here:

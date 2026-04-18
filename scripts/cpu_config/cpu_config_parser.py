@@ -24,6 +24,7 @@ def parse_config(file_path):
     include_file_dirs = []
     got_module_name = False
     got_module_description = False
+    config_include_list = []
 
     indent_size = 4
     submodule_indent_size = indent_size * 2
@@ -44,6 +45,7 @@ def parse_config(file_path):
     bounds_re =  re.compile(r"Bounds\s*:\s*\[\s*([^\]:]+)\s*:\s*([^\]]+)\s*\]")
     permissions_re = re.compile(r"Permissions\s*:\s*(.+)")
     module_include_re = re.compile(r"Module_Include\s*:\s*(.+)")
+    config_include_re = re.compile(r"Config_Include\s*:\s*(.+)")
 
     with open(file_path, "r") as file:
         config_file_lines = [normalize_indent(line, indent_size) for line in file]
@@ -92,6 +94,7 @@ def parse_config(file_path):
         desc_match = desc_re.match(line)
         permissions_match = permissions_re.match(line)
         module_include_match = module_include_re.match(line)
+        config_include_match = config_include_re.match(line)
 
         if section_match:
             if (section_match.group(1) == "SUBMODULE"):
@@ -139,7 +142,7 @@ def parse_config(file_path):
             if remainder:
                 config_data[current_section]["BaseAddress"] = remainder
 
-        elif param_match and current_section in ["BUILTIN_PARAMETERS", "USER_PARAMETERS", "CONFIG_PARAMETERS"]:
+        elif param_match and not config_include_match and current_section in ["BUILTIN_PARAMETERS", "USER_PARAMETERS", "CONFIG_PARAMETERS"]:
             key = param_match.group(1)
             value = param_match.group(2).rstrip(",")
             bit_width = param_match.group(3)
@@ -150,6 +153,9 @@ def parse_config(file_path):
                 
             if bit_width:
                 config_data[current_section][key]["bit_width"] = bit_width
+
+        elif config_include_match and current_section in ["CONFIG_PARAMETERS"]:
+            config_include_list.append(config_include_match.group(1))
 
         elif auto_expr_match and current_section in ["BUILTIN_MODULES", "USER_MODULES"]:
             if submodule_name_append:
@@ -445,7 +451,7 @@ def parse_config(file_path):
                 #Should error in the auto allocator if there aren't
                 config_data[section][mod]["registers"] = 0
 
-    return compute_config_submodules(config_data, submodule_identifier)
+    return config_data, submodule_identifier, config_include_list
 
 def process_configs(directory_path, config_file_names):
     """Processes config files in multiple folders and returns parsed data."""
@@ -455,6 +461,7 @@ def process_configs(directory_path, config_file_names):
     for folder in os.listdir(directory_path):
         folder_path = os.path.join(directory_path, folder)
         config_path = None
+        config_include_list = []
         if not os.path.isdir(folder_path):
             continue  # Skip files; only process directories
         for name in config_file_names:
@@ -463,6 +470,47 @@ def process_configs(directory_path, config_file_names):
                 config_path = potential_path
                 break  # Found a valid config file; no need to keep checking
         if config_path:
-            parsed_configs[folder], submodule_reg_map[folder] = parse_config(config_path)
+            config_data, submodule_identifier, config_include_list = parse_config(config_path)
+            parsed_configs[folder], submodule_reg_map[folder] = compute_config_submodules(config_data, submodule_identifier)
+
+        if config_include_list:
+            include_stack = [(item, os.path.dirname(config_path)) for item in config_include_list]
+            visited = set()
+
+            while include_stack:
+                item, current_dir = include_stack.pop()
+
+                # Resolve include path relative to the file that declared it
+                include_path = os.path.abspath(os.path.join(current_dir, os.path.normpath(parse_file_path(item, config_data))))
+
+                # Skip already processed includes to avoid cycles/duplicates
+                if include_path in visited:
+                    continue
+                visited.add(include_path)
+
+                # Parse included config
+                include_config_data, include_submodule_identifier, include_include_list = parse_config(include_path)
+
+                # Overwrite include parameters with master parameters
+                for section in ("BUILTIN_PARAMETERS", "USER_PARAMETERS"):
+                    if section in parsed_configs[folder]:
+                        include_config_data.setdefault(section, {})
+                        for param, pdata in parsed_configs[folder][section].items():
+                            include_config_data[section][param] = pdata  # overwrite always
+
+                # Now compute using the updated include config
+                include_parsed_config, include_submodule_reg_map = compute_config_submodules(include_config_data, include_submodule_identifier)
+
+                # Merge into this folder's master config
+                parsed_configs[folder] = merge_dictionary_into_master(parsed_configs[folder], include_parsed_config)
+
+                # Append submodule entries
+                for submodule_entry in include_submodule_reg_map:
+                    submodule_reg_map[folder].append(submodule_entry)
+
+                # Add nested includes to the stack with their directory context
+                include_dir = os.path.dirname(include_path)
+                for nested in include_include_list:
+                    include_stack.append((nested, include_dir))
 
     return parsed_configs, submodule_reg_map
