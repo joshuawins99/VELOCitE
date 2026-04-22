@@ -48,6 +48,7 @@ def parse_config(file_path):
     permissions_re = re.compile(r"Permissions\s*:\s*(.+)")
     module_include_re = re.compile(r"Module_Include\s*:\s*(.+)")
     config_include_re = re.compile(r"Config_Include\s*:\s*(.+)")
+    generated_naming_re = re.compile(r"Generated_Naming\s*:\s*(.+)")
 
     with open(file_path, "r") as file:
         config_file_lines = [normalize_indent(line, indent_size) for line in file]
@@ -97,6 +98,7 @@ def parse_config(file_path):
         permissions_match = permissions_re.match(line)
         module_include_match = module_include_re.match(line)
         config_include_match = config_include_re.match(line)
+        generated_naming_match = generated_naming_re.match(line)
 
         if section_match:
             if (section_match.group(1) == "SUBMODULE"):
@@ -355,6 +357,15 @@ def parse_config(file_path):
             else:
                 raise SyntaxError(f"Registers Defined and Module Include Specified in Entry: '{current_module}'")
             
+        elif current_module and generated_naming_match:
+            generated_naming_type = generated_naming_match.group(1)
+            generated_naming_types = ["module", "module_sub", "enumeration"]
+            if generated_naming_type in generated_naming_types:
+                config_data[current_section][current_module]["metadata"]["generated_naming"] = generated_naming_type
+            else:
+                generated_naming_types_str = ", ".join(generated_naming_types)
+                raise SyntaxError(f"'Generated_Naming :' line for '{current_module}' is not valid. Accepted types are: '{generated_naming_types_str}'")
+
         elif current_register and field_match:
             current_field = field_match.group(1)
             config_data[current_section][current_module]["regs"][current_register].setdefault("fields", {})

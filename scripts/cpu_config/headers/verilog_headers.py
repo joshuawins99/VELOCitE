@@ -46,6 +46,8 @@ def export_verilog_headers(parsed_configs, submodule_reg_map, directory_path, re
                     
                     module_name_stripped = str(module_name.split(submodule_separator)[-1])
                     stripped_name = module_name if not strip_verilog else module_name_stripped
+                    
+                    generated_naming_option = module.get("metadata", {}).get("generated_naming", "enumeration")
 
                     mod_desc_name = module.get("metadata", {}).get("name", {})
                     if mod_desc_name:
@@ -60,7 +62,7 @@ def export_verilog_headers(parsed_configs, submodule_reg_map, directory_path, re
                                 mod_reg_absolutes_joined = "\n    ".join(mod_reg_absolutes)
                                 regs_package_mask_list.append(stripped_name)
                                 mod_reg_package.append(f"""\
-package {stripped_name if not verilog_module_names else mod_desc_name}_regs_package;
+package {stripped_name if not (verilog_module_names or generated_naming_option != "enumeration") else mod_desc_name}_regs_package;
     // Offsets
     {mod_reg_offsets_joined}
 
@@ -126,7 +128,7 @@ endpackage
                     elif not mod_desc_name and verilog_module_names:
                         raise RuntimeError(f"Name not present for {module_name}. Consider adding a Name or using enum based naming")
 
-                    used_module_naming = stripped_module_name if not verilog_module_names else mod_desc_name
+                    used_module_naming = stripped_module_name if not (verilog_module_names or generated_naming_option == "module_sub") else mod_desc_name
                     if not local_mux_package_mask_list.count(stripped_name) > 1:
                         if not mux_package_mask_list.count(stripped_name) > 1:
                             mod_params_data.append(f"                   '{{'h{offset:04X}, {reg_count-subregisters}}}, // {used_module_naming}\n")
@@ -155,7 +157,7 @@ endpackage
                         elif not mod_desc_name and verilog_module_names:
                             raise RuntimeError(f"Name not present for {module_name}. Consider adding a Name or using enum based naming")
                         
-                        used_module_naming = stripped_module_name if not verilog_module_names else mod_desc_name
+                        used_module_naming = stripped_module_name if not (verilog_module_names or generated_naming_option == "module_sub") else mod_desc_name
                         if not local_mux_package_mask_list.count(stripped_name) > 1:
                             if not mux_package_mask_list.count(stripped_name) > 1:
                                 current_module_start_addr = cpu_config[section][elements.module_name]["bounds"][0]
@@ -214,7 +216,7 @@ endpackage
                         formatted_desc += f"\n//                     {line}"
                     verilog_lines.append(formatted_desc)
 
-                if not verilog_module_names:
+                if not verilog_module_names and generated_naming_option == "enumeration":
                     package_module_naming = module_name if not strip_verilog else module_name.split(submodule_separator)[-1]
                 else:
                     intermediate_package_module_naming = cpu_config[section][module_name]["metadata"].get("name", {})

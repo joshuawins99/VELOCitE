@@ -169,6 +169,22 @@ my_module_e : TRUE : AUTO
 ```
 The data from file.sv will be searched for the ```@ModuleMetadataBegin``` and ```@ModuleMetadataEnd``` keywords. This tells the parser what to inline.
 
+## Generated_Naming
+The ```Generated_Naming :``` keyword allows for a per module naming scheme for generated register and mux Verilog packages and modules. This is a more granular version of the ```use-verilog-module-names``` generator script option. Available options are:
+* enumeration
+    * The default option.
+* module
+    * Names of packages and modules are named corresponding to the ```Name :```. References to submodules will be of the enumeration type.
+* module_sum
+    * Same as module but submodules will also correspond to the ```Name :``` of that submodule.
+
+Example:
+```
+my_module_e : TRUE : AUTO
+    Generated_Naming : module
+    Module_Include : {Folder}/file.sv
+```
+
 ## Repeat
 The ```Repeat :``` keyword is used to allow multiple instantiations of the same module without manually typing out each instance. A ```Repeat : 1``` means instantiate the original module and also create a second one. Repeat modules follow the convention of {original module_name}_{repeat number}.
 ```
