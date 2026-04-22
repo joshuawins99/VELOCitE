@@ -1,6 +1,7 @@
 import os
 import re
 from cpu_config_helpers import *
+from collections import Counter
 
 def parse_config(file_path):
     """Parses the cpu_config.txt file and returns a structured dictionary, including metadata and multiline support."""
@@ -25,6 +26,7 @@ def parse_config(file_path):
     got_module_name = False
     got_module_description = False
     config_include_list = []
+    module_list = []
 
     indent_size = 4
     submodule_indent_size = indent_size * 2
@@ -197,6 +199,7 @@ def parse_config(file_path):
             else:
                 config_data[current_section][key]["metadata"]["expand_regs"] = 'FALSE'
             current_module = key
+            module_list.append(key)
             current_register = None
             current_field = None
             got_submodule = False
@@ -242,6 +245,7 @@ def parse_config(file_path):
             else:
                 config_data[current_section][key]["metadata"]["expand_regs"] = 'FALSE'
             current_module = key
+            module_list.append(key)
             current_register = None
             current_field = None
             got_submodule = False
@@ -286,6 +290,7 @@ def parse_config(file_path):
             else:
                 config_data[current_section][key]["metadata"]["expand_regs"] = 'FALSE'
             current_module = key
+            module_list.append(key)
             current_register = None
             current_field = None
             infer_module_registers[current_section][current_module] = 0
@@ -451,6 +456,13 @@ def parse_config(file_path):
                 #Should error in the auto allocator if there aren't
                 config_data[section][mod]["registers"] = 0
 
+    # Check for multiple module definitions
+    module_list_counts = Counter(module_list)
+    duplicates = [item for item, count in module_list_counts.items() if count > 1]
+    if duplicates:
+            duplicate_str = "\n  ".join(duplicates)
+            raise SyntaxError(f"Multiple definitions of: \n  {duplicate_str}")
+
     return config_data, submodule_identifier, config_include_list
 
 def process_configs(directory_path, config_file_names):
@@ -492,7 +504,7 @@ def process_configs(directory_path, config_file_names):
                 include_config_data, include_submodule_identifier, include_include_list = parse_config(include_path)
 
                 # Overwrite include parameters with master parameters
-                for section in ("BUILTIN_PARAMETERS", "USER_PARAMETERS"):
+                for section in ["BUILTIN_PARAMETERS", "USER_PARAMETERS"]:
                     if section in parsed_configs[folder]:
                         include_config_data.setdefault(section, {})
                         for param, pdata in parsed_configs[folder][section].items():

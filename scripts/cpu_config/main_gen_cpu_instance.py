@@ -77,6 +77,7 @@ if args.gen_headers:
     verilog_muxes = False
     verilog_regs = False
     strip_verilog = False
+    verilog_module_names = False
     for header in args.gen_headers:
         match header:
             case "strip-verilog": #Strips prefix of generated packages and modules
@@ -91,6 +92,8 @@ if args.gen_headers:
                 verilog_muxes = True
             case "verilog-regs":
                 verilog_regs = True
+            case "use-verilog-module-names":
+                verilog_module_names = True
     
     if (filtered_dirs):
         export_c_headers(parsed_configs=parsed_configs, submodule_reg_map=submodule_reg_map, 
@@ -103,7 +106,7 @@ if args.gen_headers:
         if verilog_muxes or verilog_regs:
             export_verilog_headers(parsed_configs=parsed_configs, submodule_reg_map=submodule_reg_map, directory_path=directory_path, 
                                    reg_width_bytes=4, user_modules_only=False, verilog_muxes=verilog_muxes, 
-                                   verilog_regs=verilog_regs, strip_verilog=strip_verilog)
+                                   verilog_regs=verilog_regs, strip_verilog=strip_verilog, verilog_module_names=verilog_module_names)
 
 code_folders = get_code_folders(parsed_configs)
 #print(code_folders)

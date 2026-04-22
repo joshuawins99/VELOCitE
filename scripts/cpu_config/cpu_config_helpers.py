@@ -12,6 +12,10 @@ def strip_repeat_suffix(name):
     parts = name.rsplit("_", 1)
     return parts[0] if parts[-1].isdigit() else name
 
+def get_repeat_suffix(name):
+    parts = name.rsplit("_", 1)
+    return parts[-1] if parts[-1].isdigit() else ""
+
 def get_code_folders(parsed_configs):
     """Extracts CODE_FOLDER values from the parsed configs if present."""
     code_folders = {}

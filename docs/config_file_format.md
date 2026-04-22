@@ -154,6 +154,14 @@ my_module_e : TRUE : AUTO
         Description : Reading from this register causes the IRQ to clear and will return the bit field with the triggered IRQ
         Permissions : Read
 ```
+
+Optionally, it may be useful to change just the ```Name :``` or ```Description :``` for an included module. Any name or description provided prior to the ```Module_Include :``` will be prioritized.
+```
+my_module_e : TRUE : AUTO
+    Name : New Name
+    Description : New Description
+    Module_Include : file.sv 
+```
 The CONFIG_PARAMETERS folder path can also be used like this:
 ```
 my_module_e : TRUE : AUTO
