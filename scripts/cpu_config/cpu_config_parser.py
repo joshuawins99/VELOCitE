@@ -527,6 +527,11 @@ def process_configs(directory_path, config_file_names):
                 # Merge into this folder's master config
                 parsed_configs[folder] = merge_dictionary_into_master(parsed_configs[folder], include_parsed_config)
 
+                # Get id_count from last submodule_reg_map_entry
+                last_id_count = submodule_reg_map[folder][-1].id_count
+                for i, submodule_entry in enumerate(include_submodule_reg_map):
+                    include_submodule_reg_map[i] = submodule_entry._replace(id_count=submodule_entry.id_count + last_id_count)
+
                 # Append submodule entries
                 for submodule_entry in include_submodule_reg_map:
                     submodule_reg_map[folder].append(submodule_entry)
