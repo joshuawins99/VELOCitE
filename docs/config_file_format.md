@@ -40,6 +40,14 @@ USER_MODULES:
         Module_Include : rtl/component_top.sv
 ```
 
+Optionally, a name can be specified to replace the first (likely top) entry in the hierarchy if desired. This is really only useful when describing a single module or a single top module with a hierarchy of submodules.
+```
+CONFIG_PARAMETERS:
+    Component_Dir : ../../component_dir/rtl
+    Config_Include : {Component_Dir}/../example_component.cfg : different_component_name_e
+```
+In this example, component_top_e from example_component.cfg will be imported as different_component_name_e.
+
 ## Module Blocks
 USER_MODULES can optionally have a base address eg. USER_MODULES: 'h9000
 

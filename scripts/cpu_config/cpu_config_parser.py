@@ -1,9 +1,9 @@
 import os
 import re
 from cpu_config_helpers import *
-from collections import Counter
+from collections import Counter, namedtuple
 
-def parse_config(file_path):
+def parse_config(file_path, updated_name):
     """Parses the cpu_config.txt file and returns a structured dictionary, including metadata and multiline support."""
     config_data = {}
     current_section = None
@@ -25,6 +25,7 @@ def parse_config(file_path):
     include_file_dirs = []
     got_module_name = False
     got_module_description = False
+    config_include_list_named_tuple = namedtuple("config_include_list_named_tuple", ["config_path", "updated_name"])
     config_include_list = []
     module_list = []
 
@@ -47,7 +48,7 @@ def parse_config(file_path):
     bounds_re =  re.compile(r"Bounds\s*:\s*\[\s*([^\]:]+)\s*:\s*([^\]]+)\s*\]")
     permissions_re = re.compile(r"Permissions\s*:\s*(.+)")
     module_include_re = re.compile(r"Module_Include\s*:\s*(.+)")
-    config_include_re = re.compile(r"Config_Include\s*:\s*(.+)")
+    config_include_re = re.compile(r"Config_Include\s*:\s*([^\s:]+)\s*(?:\:\s*([A-Za-z0-9_]+))?")
     generated_naming_re = re.compile(r"Generated_Naming\s*:\s*(.+)")
 
     with open(file_path, "r") as file:
@@ -159,14 +160,20 @@ def parse_config(file_path):
                 config_data[current_section][key]["bit_width"] = bit_width
 
         elif config_include_match and current_section in ["CONFIG_PARAMETERS"]:
-            config_include_list.append(config_include_match.group(1))
+            if config_include_match.group(2):
+                config_include_list.append(config_include_list_named_tuple(config_include_match.group(1), config_include_match.group(2)))
+            else:
+                config_include_list.append(config_include_list_named_tuple(config_include_match.group(1), None))
 
         elif auto_expr_match and current_section in ["BUILTIN_MODULES", "USER_MODULES"]:
             if submodule_name_append:
                 key = submodule_name_append
                 submodule_name_append = None
             else:
-                key = auto_expr_match.group(1)
+                if not module_list and updated_name:
+                    key = updated_name
+                else:
+                    key = auto_expr_match.group(1)
             flag = auto_expr_match.group(2)
             reg_count = auto_expr_match.group(3)
             expand_regs = auto_expr_match.group(4)
@@ -212,7 +219,10 @@ def parse_config(file_path):
                 key = submodule_name_append
                 submodule_name_append = None
             else:
-                key = auto_literal_match.group(1)
+                if not module_list and updated_name:
+                    key = updated_name
+                else:
+                    key = auto_literal_match.group(1)
             flag = auto_literal_match.group(2)
             reg_count = int(auto_literal_match.group(3))
             expand_regs = auto_literal_match.group(4)
@@ -258,7 +268,10 @@ def parse_config(file_path):
                 key = submodule_name_append
                 submodule_name_append = None
             else:
-                key = auto_simple_match.group(1)
+                if not module_list and updated_name:
+                    key = updated_name
+                else:
+                    key = auto_simple_match.group(1)
             flag = auto_simple_match.group(2)
             expand_regs = auto_simple_match.group(3)
             got_register_name = False
@@ -304,7 +317,10 @@ def parse_config(file_path):
                 key = submodule_name_append
                 submodule_name_append = None
             else:
-                key = module_match.group(1)
+                if not module_list and updated_name:
+                    key = updated_name
+                else:
+                    key = module_match.group(1)
             flag = module_match.group(2)
             bounds = [b.strip().rstrip(",") for b in module_match.group(3).split(",")]
             expand_regs = module_match.group(4)
@@ -493,7 +509,7 @@ def process_configs(directory_path, config_file_names):
                 config_path = potential_path
                 break  # Found a valid config file; no need to keep checking
         if config_path:
-            config_data, submodule_identifier, config_include_list = parse_config(config_path)
+            config_data, submodule_identifier, config_include_list = parse_config(config_path, None)
             parsed_configs[folder], submodule_reg_map[folder] = compute_config_submodules(config_data, submodule_identifier)
 
         if config_include_list:
@@ -504,7 +520,7 @@ def process_configs(directory_path, config_file_names):
                 item, current_dir = include_stack.pop()
 
                 # Resolve include path relative to the file that declared it
-                include_path = os.path.abspath(os.path.join(current_dir, os.path.normpath(parse_file_path(item, config_data))))
+                include_path = os.path.abspath(os.path.join(current_dir, os.path.normpath(parse_file_path(item.config_path, config_data))))
 
                 # Skip already processed includes to avoid cycles/duplicates
                 if include_path in visited:
@@ -512,7 +528,7 @@ def process_configs(directory_path, config_file_names):
                 visited.add(include_path)
 
                 # Parse included config
-                include_config_data, include_submodule_identifier, include_include_list = parse_config(include_path)
+                include_config_data, include_submodule_identifier, include_include_list = parse_config(include_path, item.updated_name)
 
                 # Overwrite include parameters with master parameters
                 for section in ["BUILTIN_PARAMETERS", "USER_PARAMETERS"]:

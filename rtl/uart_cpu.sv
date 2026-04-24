@@ -139,7 +139,7 @@ module uart_cpu #(
     async_fifo #(
         .DSIZE       (8),
         .ASIZE       (9),
-        .AWFULLSIZE  (8),
+        .AWFULLSIZE  (32),
         .AREMPTYSIZE (32),
         .FALLTHROUGH ("TRUE")
     ) async_fifo_uart_6502_1 (
