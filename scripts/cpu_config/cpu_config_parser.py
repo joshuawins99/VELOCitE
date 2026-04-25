@@ -514,7 +514,7 @@ def process_configs(directory_path, config_file_names):
 
         if config_include_list:
             include_stack = [(item, os.path.dirname(config_path)) for item in config_include_list]
-            visited = set()
+            visited = []
 
             while include_stack:
                 item, current_dir = include_stack.pop()
@@ -523,9 +523,12 @@ def process_configs(directory_path, config_file_names):
                 include_path = os.path.abspath(os.path.join(current_dir, os.path.normpath(parse_file_path(item.config_path, config_data))))
 
                 # Skip already processed includes to avoid cycles/duplicates
-                if include_path in visited:
-                    continue
-                visited.add(include_path)
+                if (include_path, item.updated_name) in visited:
+                    if item.updated_name:
+                        raise SyntaxError(f"Multiple Config_Include definitions of: \n  {include_path} with name {item.updated_name}")
+                    else:
+                        raise SyntaxError(f"Multiple Config_Include definitions of: \n  {include_path} with default name")
+                visited.append((include_path, item.updated_name))
 
                 # Parse included config
                 include_config_data, include_submodule_identifier, include_include_list = parse_config(include_path, item.updated_name)

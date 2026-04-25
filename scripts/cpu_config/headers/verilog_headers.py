@@ -56,11 +56,11 @@ def export_verilog_headers(parsed_configs, submodule_reg_map, directory_path, re
                         raise RuntimeError(f"Name not present for {module_name}. Consider adding a Name or using enum based naming")
 
                     if mod_reg_offsets:
-                        if not local_regs_package_mask_list.count(stripped_name) > 1:
-                            if not regs_package_mask_list.count(stripped_name) > 1:
+                        if not local_regs_package_mask_list.count(stripped_name) >= 1:
+                            if not regs_package_mask_list.count(stripped_name) >= 1:
                                 mod_reg_offsets_joined = "\n    ".join(mod_reg_offsets)
                                 mod_reg_absolutes_joined = "\n    ".join(mod_reg_absolutes)
-                                regs_package_mask_list.append(stripped_name)
+                                local_regs_package_mask_list.append(stripped_name)
                                 mod_reg_package.append(f"""\
 package {stripped_name if not (verilog_module_names or generated_naming_option != "enumeration") else mod_desc_name}_regs_package;
     // Offsets
@@ -79,8 +79,6 @@ package {stripped_name if not (verilog_module_names or generated_naming_option !
     endfunction
 endpackage                       
 """)
-                        else:
-                           raise RuntimeError(f"Multiple definitions of module instance name: '{module_name}'. Please rename.") 
 
                 if module_name == "BaseAddress" or not isinstance(module, dict):
                     continue
@@ -112,6 +110,7 @@ endpackage
                 mod_data_tuple = namedtuple("mod_data_tuple", ["index", "module_name",])
                 mod_data_i_values = []
                 mod_data_i_assignments = []
+                stripped_name_compare_value = ""
 
                 if cpu_config[section][module_name]["metadata"].get("repeat_instance", ''):
                     continue
@@ -129,20 +128,17 @@ endpackage
                         raise RuntimeError(f"Name not present for {module_name}. Consider adding a Name or using enum based naming")
 
                     used_module_naming = stripped_module_name if not (verilog_module_names or generated_naming_option == "module_sub") else mod_desc_name
-                    if not local_mux_package_mask_list.count(stripped_name) > 1:
-                        if not mux_package_mask_list.count(stripped_name) > 1:
-                            mod_params_data.append(f"                   '{{'h{offset:04X}, {reg_count-subregisters}}}, // {used_module_naming}\n")
-                            mod_params_base_addresses.append(f"localparam {used_module_naming}_offset = 'h{offset:04X};")
-                            repeat_instance = cpu_config[section][module_name]["metadata"].get("repeat_instance", '')
-                            if not repeat_instance:
-                                mod_params_reg_count.append(f"localparam {used_module_naming}_reg_count = {reg_count-subregisters};")
-                                local_mux_package_mask_list.append(stripped_name)
-                            mod_input_ports.append(f"input  logic [31:0] {used_module_naming}_data_i,")
-                            mod_data_i_values.append(mod_data_tuple(num_ports, stripped_module_name))
-                            offset += (reg_count-subregisters)*reg_width_bytes
-                            num_ports += 1
-                    else:
-                        raise RuntimeError(f"Multiple definitions of module instance name: '{module_name}'. Please rename.")
+                    mod_params_data.append(f"                   '{{'h{offset:04X}, {reg_count-subregisters}}}, // {used_module_naming}\n")
+                    mod_params_base_addresses.append(f"localparam {used_module_naming}_offset = 'h{offset:04X};")
+                    repeat_instance = cpu_config[section][module_name]["metadata"].get("repeat_instance", '')
+                    if not repeat_instance:
+                        mod_params_reg_count.append(f"localparam {used_module_naming}_reg_count = {reg_count-subregisters};")
+                        local_mux_package_mask_list.append(stripped_name)
+                        stripped_name_compare_value = stripped_name
+                    mod_input_ports.append(f"input  logic [31:0] {used_module_naming}_data_i,")
+                    mod_data_i_values.append(mod_data_tuple(num_ports, stripped_module_name))
+                    offset += (reg_count-subregisters)*reg_width_bytes
+                    num_ports += 1
 
                 for elements in current_submodule_map:
                     if module_name == elements.module_parent:
@@ -158,24 +154,21 @@ endpackage
                             raise RuntimeError(f"Name not present for {module_name}. Consider adding a Name or using enum based naming")
                         
                         used_module_naming = stripped_module_name if not (verilog_module_names or generated_naming_option == "module_sub") else mod_desc_name
-                        if not local_mux_package_mask_list.count(stripped_name) > 1:
-                            if not mux_package_mask_list.count(stripped_name) > 1:
-                                current_module_start_addr = cpu_config[section][elements.module_name]["bounds"][0]
-                                current_module_end_addr = cpu_config[section][elements.module_name]["bounds"][1]
-                                current_module_reg_count = ((current_module_end_addr - current_module_start_addr) // reg_width_bytes) + 1
-                                mod_params_data.append(f"                   '{{'h{offset:04X}, {current_module_reg_count}}}, // {used_module_naming}\n")
-                                mod_params_base_addresses.append(f"localparam {used_module_naming}_offset = 'h{offset:04X};")
-                                repeat_instance = cpu_config[section][elements.module_name]["metadata"].get("repeat_instance", '')
-                                if not repeat_instance:
-                                    mod_params_reg_count.append(f"localparam {used_module_naming}_reg_count = {current_module_reg_count};")
-                                    local_mux_package_mask_list.append(stripped_name)
-                                mod_num_instances.append(mod_params_instances_tuple(used_module_naming, repeat_instance))
-                                mod_input_ports.append(f"input  logic [31:0] {used_module_naming}_data_i,")
-                                mod_data_i_values.append(mod_data_tuple(num_ports, used_module_naming))
-                                num_ports += 1
-                                offset += (current_module_reg_count)*reg_width_bytes
-                        else:
-                            raise RuntimeError(f"Multiple definitions of module instance name: '{stripped_name}'. Please rename.")
+                        current_module_start_addr = cpu_config[section][elements.module_name]["bounds"][0]
+                        current_module_end_addr = cpu_config[section][elements.module_name]["bounds"][1]
+                        current_module_reg_count = ((current_module_end_addr - current_module_start_addr) // reg_width_bytes) + 1
+                        mod_params_data.append(f"                   '{{'h{offset:04X}, {current_module_reg_count}}}, // {used_module_naming}\n")
+                        mod_params_base_addresses.append(f"localparam {used_module_naming}_offset = 'h{offset:04X};")
+                        repeat_instance = cpu_config[section][elements.module_name]["metadata"].get("repeat_instance", '')
+                        if not repeat_instance:
+                            mod_params_reg_count.append(f"localparam {used_module_naming}_reg_count = {current_module_reg_count};")
+                            local_mux_package_mask_list.append(stripped_name)
+                            stripped_name_compare_value = stripped_name
+                        mod_num_instances.append(mod_params_instances_tuple(used_module_naming, repeat_instance))
+                        mod_input_ports.append(f"input  logic [31:0] {used_module_naming}_data_i,")
+                        mod_data_i_values.append(mod_data_tuple(num_ports, used_module_naming))
+                        num_ports += 1
+                        offset += (current_module_reg_count)*reg_width_bytes
 
                 mod_params_data[-1] = mod_params_data[-1].replace("},", "} ") #Remove comma from last entry
                 mod_params_base_address_joined = "\n    ".join(mod_params_base_addresses)
@@ -208,13 +201,15 @@ endpackage
                     continue
 
                 # Documentation
-                verilog_lines.append(f"// Module: {mod_name_str} ({module_name.split(submodule_separator)[-1]})")
-                if mod_desc_str:
-                    desc_lines = mod_desc_str.split('\n')
-                    formatted_desc = f"// Module Description: {desc_lines[0]}"
-                    for line in desc_lines[1:]:
-                        formatted_desc += f"\n//                     {line}"
-                    verilog_lines.append(formatted_desc)
+                if not local_mux_package_mask_list.count(stripped_name_compare_value) > 1:
+                    if not mux_package_mask_list.count(stripped_name_compare_value) > 1:
+                        verilog_lines.append(f"// Module: {mod_name_str} ({module_name.split(submodule_separator)[-1]})")
+                        if mod_desc_str:
+                            desc_lines = mod_desc_str.split('\n')
+                            formatted_desc = f"// Module Description: {desc_lines[0]}"
+                            for line in desc_lines[1:]:
+                                formatted_desc += f"\n//                     {line}"
+                            verilog_lines.append(formatted_desc)
 
                 if not verilog_module_names and generated_naming_option == "enumeration":
                     package_module_naming = module_name if not strip_verilog else module_name.split(submodule_separator)[-1]
@@ -224,8 +219,12 @@ endpackage
                         package_module_naming = sanitize_identifier(intermediate_package_module_naming).lower()
                     else:
                         raise RuntimeError(f"Name not present for {module_name}. Consider adding a Name or using enum based naming")
-                        
-                verilog_boilerplate = f"""\
+
+                verilog_boilerplate = ""
+
+                if not local_mux_package_mask_list.count(stripped_name_compare_value) > 1:
+                    if not mux_package_mask_list.count(stripped_name_compare_value) > 1:
+                        verilog_boilerplate = f"""\
 package {package_module_naming}_mux_package;
     {mod_params_base_address_joined}
     {mod_params_reg_count_joined}
@@ -296,7 +295,9 @@ module {package_module_naming}_mux #(
 
 endmodule
 """
-                verilog_lines.append(verilog_boilerplate)
+                if not local_mux_package_mask_list.count(stripped_name_compare_value) > 1:
+                    if not mux_package_mask_list.count(stripped_name_compare_value) > 1:
+                        verilog_lines.append(verilog_boilerplate)
 
         for item in local_mux_package_mask_list:
             mux_package_mask_list.append(item)
