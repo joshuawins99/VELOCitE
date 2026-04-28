@@ -21,26 +21,26 @@ import cpu_reg_package::*;
 
     logic cdc_busy;
 
-    bus_rv32 cpubus();
+    bus_rv32 main_rv32_cpubus_internal();
 
     bus_rv32 cdc_cpubus_internal [num_entries]();
 
     main_rv32 mrv32_1 (
-        .cpubus (cpubus)
+        .cpubus (main_rv32_cpubus_internal)
     );
 
-    assign cpubus.clk_i = clk_i;
-    assign cpubus.reset_i = reset_i;
+    assign main_rv32_cpubus_internal.clk_i = clk_i;
+    assign main_rv32_cpubus_internal.reset_i = reset_i;
 
-    assign cpubus.irq_i = irq_i;
-    assign cpubus.external_data_i = external_data_i;
-    assign external_data_o = cpubus.external_data_o;
+    assign main_rv32_cpubus_internal.irq_i = irq_i;
+    assign main_rv32_cpubus_internal.external_data_i = external_data_i;
+    assign external_data_o = main_rv32_cpubus_internal.external_data_o;
 
-    assign uart_tx_o = cpubus.uart_tx_o;
-    assign cpubus.uart_rx_i = uart_rx_i;
-    assign uart_rts_o = cpubus.uart_rts_o;
+    assign uart_tx_o = main_rv32_cpubus_internal.uart_tx_o;
+    assign main_rv32_cpubus_internal.uart_rx_i = uart_rx_i;
+    assign uart_rts_o = main_rv32_cpubus_internal.uart_rts_o;
 
-    assign cpubus.cpu_halt_i = cdc_busy | external_cpu_halt_i;
+    assign main_rv32_cpubus_internal.cpu_halt_i = cdc_busy | external_cpu_halt_i;
 
     genvar i;
     generate
@@ -63,7 +63,7 @@ import cpu_reg_package::*;
         .module_busy_en_mask   (module_busy_en_mask)
     ) cdc_1 (
         .cdc_clks_i            (cdc_clks_i),
-        .cpubus_i              (cpubus),
+        .cpubus_i              (main_rv32_cpubus_internal),
         .cpubus_o              (cdc_cpubus_internal),
         .busy_o                (cdc_busy)
     );
