@@ -23,11 +23,14 @@ Reg4 :
     Permissions : Read
 @ModuleMetadataEnd*/
 module uart_cpu #(
-    parameter BaseAddress     = 0,
-    parameter address_width   = 0,
-    parameter FPGAClkSpeed    = 0,
-    parameter UARTBaudRate    = 0,
-    parameter Address_Wording = 1
+    parameter BaseAddress                 = 0,
+    parameter address_width               = 0,
+    parameter FPGAClkSpeed                = 0,
+    parameter UARTBaudRate                = 0,
+    parameter Address_Wording             = 1,
+    parameter FIFO_Address_Size           = 9,
+    parameter FIFO_Almost_Full_Threshold  = 32,
+    parameter FIFO_Almost_Empty_Threshold = 32
 )(
     input  logic                     clk_i,
     input  logic                     reset_i,
@@ -129,18 +132,22 @@ module uart_cpu #(
     end
 
     always_ff @(posedge clk_i) begin
-        if (fifo_almost_full == 1'b1) begin
-            uart_rts_o <= 1'b1;
-        end else if (fifo_almost_empty == 1'b1) begin
+        if (reset_i == 1'b1) begin
             uart_rts_o <= 1'b0;
+        end else begin
+            if (fifo_almost_full == 1'b1) begin
+                uart_rts_o <= 1'b1;
+            end else if (fifo_almost_empty == 1'b1) begin
+                uart_rts_o <= 1'b0;
+            end
         end
     end
 
     async_fifo #(
         .DSIZE       (8),
-        .ASIZE       (9),
-        .AWFULLSIZE  (32),
-        .AREMPTYSIZE (32),
+        .ASIZE       (FIFO_Address_Size),
+        .AWFULLSIZE  (FIFO_Almost_Full_Threshold),
+        .AREMPTYSIZE (FIFO_Almost_Empty_Threshold),
         .FALLTHROUGH ("TRUE")
     ) async_fifo_uart_6502_1 (
         .wclk    (clk_i),
