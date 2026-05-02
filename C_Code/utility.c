@@ -34,7 +34,7 @@ char* u32_to_ascii(uint32_t value) {
     char *p = buf + 10;
     *p = '\0';
     do {
-        *--p = '0' + (value % 10);
+        *--p = '0' + (char)(value % 10);
         value /= 10;
     } while (value);
     return p;

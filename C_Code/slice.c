@@ -5,6 +5,7 @@
 //Range-style safe: buf[start..end]
 SliceU8 slice_range_safe(uint8_t *buf, slen_t buf_len, slen_t start, slen_t end) {
     SLICE_RUNTIME_CHECK(start <= end && end <= buf_len);
+    (void)buf_len;
 
     return (SliceU8){ buf + start, end - start };
 }
@@ -12,6 +13,7 @@ SliceU8 slice_range_safe(uint8_t *buf, slen_t buf_len, slen_t start, slen_t end)
 //Length-style safe: buf[start..start+length]
 SliceU8 slice_len_safe(uint8_t *buf, slen_t buf_len, slen_t start, slen_t length) {
     SLICE_RUNTIME_CHECK(start + length <= buf_len);
+    (void)buf_len;
 
     return (SliceU8){ buf + start, length };
 }

@@ -168,28 +168,33 @@ SliceU8 writeFPGAWrapper(SliceU8 data) {
 }
 
 SliceU8 enterQueueMode(SliceU8 data) {
+    (void)data;
     queueMode = 1;
     return cstr_to_slice(NULL);
 }
 
 SliceU8 exitQueueMode(SliceU8 data) {
+    (void)data;
     queueMode = 0;
     return cstr_to_slice(NULL);
 }
 
 SliceU8 runQueueCommands(SliceU8 data) {
+    (void)data;
     queueMode = 0;
     executeQueuedCommands();
     return cstr_to_slice(NULL);
 }
 
 SliceU8 clearQueue(SliceU8 data) {
+    (void)data;
     cmdQueue.head = 0;
     cmdQueue.tail = 0;
     return cstr_to_slice(NULL);
 }
 
 SliceU8 printQueueWrapper (SliceU8 data) {
+    (void)data;
     printQueuedCommands();
     return cstr_to_slice(NULL);
 }
@@ -223,6 +228,7 @@ const command_entry commands[] = {
 const uint8_t num_commands = sizeof(commands) / sizeof(commands[0]); //Divide total size in bytes by the size in bytes of a single element
 
 SliceU8 helpWrapper (SliceU8 data) {
+    (void)data;
     uint8_t i;
 
     Print(1, "Available Commands:");
