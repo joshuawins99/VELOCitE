@@ -156,7 +156,7 @@ if args.build:
                 curr_config_dict = {cpu_name: parsed_configs.get(cpu_name)}
                 save_systemverilog_files(curr_config_dict, submodule_reg_map, absolute_path)
                 update_cpu_modules_file(curr_config_dict, absolute_path, reference_file=f"{parent_directory}/{reference_system_file}")
-                subprocess.run(["bash", "-c", "git clean -fdx"], cwd=parent_directory, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                #subprocess.run(["bash", "-c", "git clean -fdx"], cwd=parent_directory, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     else:
         raise FileNotFoundError(f"{go_up_n_levels(current_directory,3)}/{build_script} not found. Are you using the source repo?")
 

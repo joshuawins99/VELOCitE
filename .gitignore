@@ -10,6 +10,7 @@ C_Code/*.lds
 C_Code/*.s
 C_Code/*.su
 rtl/version_string.svh
+rtl/version_string.sv
 rtl/uart_vhdl/uart_vhd_cpu.v
 ref_fpga_sys_lite.sv
 *.mem

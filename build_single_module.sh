@@ -63,6 +63,7 @@ date --date 'now' '+%a %b %d %r %Z %Y' | sed -e 's/$/"/' -e 's/,/","/g' >> versi
 cd ..
 
 scripts/create_memory_module.py $CUSTOM_CODE_FOLDER/mem_init.mem rtl/picosoc_mem.v
+scripts/create_version_module.py rtl/version_string.svh rtl/version_string.sv
 scripts/concatenate_modules.sh cpu_system_filelist.txt ref_fpga_sys_lite.sv
 
 irq_result=$(nm $CUSTOM_CODE_FOLDER/a.elf | grep -w irq | awk '{print $1}')
@@ -88,9 +89,9 @@ if [ "$BUILD_MODE" = true ]; then
     if grep -q "Testbench Passed!" sim_result.txt; then
         echo "Testbench Passed!"
         if [ "$VERSION_TYPE" = REL ]; then
-            tar -czf v$(cat version).tar.gz ref_fpga_sys_lite.sv generate_cpu_instance.py
+            tar -czf v$(cat version).tar.gz ref_fpga_sys_lite.sv generate_cpu_instance.py docs
         else
-            tar -czf $(git rev-parse --verify HEAD | cut -c1-7)"(v$(cat version))".tar.gz ref_fpga_sys_lite.sv generate_cpu_instance.py
+            tar -czf $(git rev-parse --verify HEAD | cut -c1-7)"(v$(cat version))".tar.gz ref_fpga_sys_lite.sv generate_cpu_instance.py docs
         fi
         rm generate_cpu_instance.py
     else
