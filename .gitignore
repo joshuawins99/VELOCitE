@@ -1,13 +1,8 @@
 converted.v
 C_Code/a.elf
 C_Code/a.out
-C_Code/*.c
-C_Code/*.h
-C_Code/*.py
 C_Code/*.mem
 C_Code/*.map
-C_Code/*.lds
-C_Code/*.s
 C_Code/*.su
 rtl/version_string.svh
 rtl/version_string.sv
