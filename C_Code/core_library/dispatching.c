@@ -6,6 +6,9 @@ static command_entry *cmd_table = NULL;
 static uint8_t cmd_capacity = 0;
 static uint8_t command_count = 0;
 
+CommandQueue cmdQueue = { .head = 0, .tail = 0 };
+uint8_t queueMode = 0; // 0 = immediate, 1 = queue mode
+
 uint8_t isQueueFull() {
     return cmdQueue.tail >= MAX_CMD_QUEUE;
 }
@@ -89,7 +92,7 @@ SliceU8 executeCommands(SliceU8 data) {
     
     for (i = 0; i < command_count; ++i) {
         if (stringMatchSlicePrefix(data, cmd_table[i].command) == 1) {
-            if (queueMode == 1 && stringMatchSlicePrefix(cstr_to_slice("exitQueue"), cmd_table[i].command) == 1) {
+            if (queueMode == 1 && stringMatchSlicePrefix(cstr_to_slice("exitQueue"), cmd_table[i].command) != 1) {
                 enqueueCommand(data);
                 return cstr_to_slice(NULL);
             }

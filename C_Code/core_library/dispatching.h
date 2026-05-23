@@ -21,9 +21,8 @@ typedef struct {
     uint8_t index;            // assigned at registration
 } command_entry;
 
-
-__attribute__((unused)) static CommandQueue cmdQueue = { .head = 0, .tail = 0 };
-__attribute__((unused)) static uint8_t queueMode = 0; // 0 = immediate, 1 = queue mode
+extern CommandQueue cmdQueue;
+extern uint8_t queueMode;
 
 uint8_t isQueueFull();
 uint8_t isQueueEmpty();
