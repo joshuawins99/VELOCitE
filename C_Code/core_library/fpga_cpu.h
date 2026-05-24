@@ -37,5 +37,14 @@
 #define TOKENIZER_SEPARATOR ','
 #endif
 
+// Coroutine Defines
+#ifndef MAX_TASKS
+#define MAX_TASKS 8
+#endif
+
+#ifndef FRAME_SIZE
+#define FRAME_SIZE 64 // bytes per frame
+#endif
+
 //#define REPL_UART //Change from default mode to REPL mode
 //#define CARRIAGE_RETURN //Add a \r in addition to \n for a newline

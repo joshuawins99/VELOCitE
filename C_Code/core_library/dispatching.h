@@ -19,6 +19,7 @@ typedef struct {
     SliceU8 command;          // command name
     command_func func;        // function pointer
     uint8_t index;            // assigned at registration
+    uint8_t is_coroutine;
 } command_entry;
 
 extern CommandQueue cmdQueue;
@@ -36,5 +37,8 @@ void UARTCommand(SliceU8);
 void ReadUART();
 void setCommandsBuffer(command_entry *, uint8_t);
 int8_t registerCommand(const char *, command_func);
+int8_t registerCommandCR(const char *, command_func);
+uint8_t getCurrentCommandCount();
+uint8_t getCommandIndexFromTable(command_func);
 
 #endif

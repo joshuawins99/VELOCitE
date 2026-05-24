@@ -24,6 +24,7 @@ while [[ $# -gt 0 ]]; do
             BUILD_MODE=true
             VERSION_TYPE="$2"
             shift 2
+            rm -f $CUSTOM_CODE_FOLDER/a.out
             ;;
         --code-folder)
             CUSTOM_CODE_FOLDER="$2"

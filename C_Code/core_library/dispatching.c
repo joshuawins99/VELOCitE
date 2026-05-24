@@ -1,6 +1,7 @@
 #include "io.h"
 #include "utility.h"
 #include "dispatching.h"
+#include "coroutines.h"
 
 static command_entry *cmd_table = NULL;
 static uint8_t cmd_capacity = 0;
@@ -96,6 +97,10 @@ SliceU8 executeCommands(SliceU8 data) {
                 enqueueCommand(data);
                 return cstr_to_slice(NULL);
             }
+            if (cmd_table[i].is_coroutine == 1) { 
+                scheduler_start_root(cmd_table[i].func, cmd_table[i].index, data);
+                return cstr_to_slice(NULL);
+            }
             return cmd_table[i].func(data);
         }
     }
@@ -114,6 +119,10 @@ void UARTCommand (SliceU8 data) {
 //Incoming UART Line Buffer and Index
 static uint8_t char_iter;
 static char readuart[MAX_LINE_LENGTH];
+
+#ifdef REPL_UART
+static uint8_t cursor_placed = 0;
+#endif
 
 #ifdef REPL_UART
 void read_line() {
@@ -141,6 +150,7 @@ void read_line() {
 
 void ReadUART() {
 #ifndef REPL_UART
+    if (ReadIO(UART_CPU_BaseAddress+(4*ADDR_WORD)) == 1) return;
     char c;
 
     c = get_char();
@@ -152,12 +162,17 @@ void ReadUART() {
         char_iter = 0;
     }
 #else
-    if (queueMode == 1) {
-        Print(0, "[Queue] > ");
-    } else {
-        Print(0, "> ");
+    if (cursor_placed == 0) {
+        if (queueMode == 1) {
+            Print(0, "[Queue] > ");
+        } else {
+            Print(0, "> ");
+        }
+        cursor_placed = 1;
     }
+    if (ReadIO(UART_CPU_BaseAddress+(4*ADDR_WORD)) == 1) return;
     read_line();
+    cursor_placed = 0;
     UARTCommand(slice_range((uint8_t *)readuart, 0, char_iter));
 #endif
 }
@@ -177,6 +192,34 @@ int8_t registerCommand(const char *name, command_func func) {
     c->command = cstr_to_slice((char *)name);
     c->func = func;
     c->index = command_count - 1;
+    c->is_coroutine = 0;
 
+    return 0;
+}
+
+int8_t registerCommandCR(const char *name, command_func func) {
+    if (command_count >= cmd_capacity) {
+        return -1;
+    }
+
+    command_entry *c = &cmd_table[command_count++];
+    c->command = cstr_to_slice((char *)name);
+    c->func = func;
+    c->index = command_count - 1;
+    c->is_coroutine = 1;
+
+    return 0;
+}
+
+uint8_t getCurrentCommandCount() {
+    return command_count;
+}
+
+uint8_t getCommandIndexFromTable(command_func func) {
+    for (uint8_t i = 0; i < command_count; i++) {
+        if (func == cmd_table[i].func) {
+            return i;
+        }
+    }
     return 0;
 }
