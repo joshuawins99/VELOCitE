@@ -33,6 +33,14 @@
 #define MAX_TOKEN_LENGTH 16
 #endif
 
+#ifndef MAX_CMD_QUEUE
+#define MAX_CMD_QUEUE 32
+#endif
+
+#ifndef MAX_LINE_LENGTH
+#define MAX_LINE_LENGTH 40
+#endif
+
 #ifndef TOKENIZER_SEPARATOR
 #define TOKENIZER_SEPARATOR ','
 #endif

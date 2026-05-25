@@ -11,7 +11,7 @@ CommandQueue cmdQueue = { .head = 0, .tail = 0 };
 uint8_t queueMode = 0; // 0 = immediate, 1 = queue mode
 
 uint8_t isQueueFull() {
-    return cmdQueue.tail >= MAX_CMD_QUEUE;
+    return ((cmdQueue.tail + 1) % MAX_CMD_QUEUE) == cmdQueue.head;
 }
 
 uint8_t isQueueEmpty() {
@@ -27,9 +27,7 @@ void enqueueCommand(SliceU8 data) {
             ++i;
         }
         cmdQueue.slice_lengths[cmdQueue.tail] = data.len;
-        cmdQueue.commands[cmdQueue.tail][i] = '\0';
-
-        ++cmdQueue.tail;
+        cmdQueue.tail = (uint8_t)(cmdQueue.tail + 1) % MAX_CMD_QUEUE;
     }
 }
 
@@ -194,6 +192,28 @@ int8_t registerCommand(const char *name, command_func func) {
     c->index = command_count - 1;
     c->is_coroutine = 0;
 
+    return 0;
+}
+
+int8_t unregisterCommand(const char *name) {
+    int32_t idx = -1;
+    for (int32_t i = 0; i < command_count; i++) {
+        if (stringMatchSlice(cmd_table[i].command, cstr_to_slice((void *)name))) {
+            idx = i;
+            break;
+        }
+    }
+
+    if (idx < 0) {
+        return -1;
+    }
+
+    for (int32_t i = idx; i < command_count - 1; i++) {
+        cmd_table[i] = cmd_table[i + 1];
+        cmd_table[i].index = (uint8_t)i;
+    }
+
+    command_count--;
     return 0;
 }
 
