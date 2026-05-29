@@ -10,11 +10,11 @@ static uint8_t command_count = 0;
 CommandQueue cmdQueue = { .head = 0, .tail = 0 };
 uint8_t queueMode = 0; // 0 = immediate, 1 = queue mode
 
-uint8_t isQueueFull() {
+uint8_t isQueueFull(void) {
     return ((cmdQueue.tail + 1) % MAX_CMD_QUEUE) == cmdQueue.head;
 }
 
-uint8_t isQueueEmpty() {
+uint8_t isQueueEmpty(void) {
     return cmdQueue.head == cmdQueue.tail;
 }
 
@@ -31,7 +31,7 @@ void enqueueCommand(SliceU8 data) {
     }
 }
 
-SliceU8 dequeueCommand() {
+SliceU8 dequeueCommand(void) {
     uint8_t idx = cmdQueue.head;
     
     if (!isQueueEmpty()) {
@@ -41,7 +41,7 @@ SliceU8 dequeueCommand() {
     return cstr_to_slice(NULL);
 }
 
-void executeQueuedCommands() {
+void executeQueuedCommands(void) {
     SliceU8 cmd;
     SliceU8 result;
 
@@ -54,7 +54,7 @@ void executeQueuedCommands() {
     }
 }
 
-void printQueuedCommands() {
+void printQueuedCommands(void) {
     uint8_t i;
     char label[8];
     char *index_str;
@@ -123,7 +123,7 @@ static uint8_t cursor_placed = 0;
 #endif
 
 #ifdef REPL_UART
-void read_line() {
+void read_line(void) {
     char c;
     
     char_iter = 0;
@@ -146,7 +146,7 @@ void read_line() {
 }
 #endif
 
-void ReadUART() {
+void ReadUART(void) {
 #ifndef REPL_UART
     if (ReadIO(UART_CPU_BaseAddress+(4*ADDR_WORD)) == 1) return;
     char c;
@@ -231,7 +231,7 @@ int8_t registerCommandCR(const char *name, command_func func) {
     return 0;
 }
 
-uint8_t getCurrentCommandCount() {
+uint8_t getCurrentCommandCount(void) {
     return command_count;
 }
 

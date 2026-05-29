@@ -10,11 +10,11 @@
 #define ReadIO(addr)        (*(volatile uint8_t*) (addr))
 #define ReadIO32(addr)      (*(volatile uint32_t*) (addr))
 
-char get_char ();
+char get_char (void);
 void put_char (uint8_t);
 void Print (uint8_t, const char *);
 void PrintSlice (uint8_t, const SliceU8);
-SliceU8 ReadVersion ();
+SliceU8 ReadVersion (void);
 SliceU8 readFPGA (uint32_t);
 void writeFPGA (uint32_t, uint32_t);
 

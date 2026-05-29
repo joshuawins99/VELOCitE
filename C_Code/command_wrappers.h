@@ -10,5 +10,6 @@ SliceU8 exitQueueMode(SliceU8);
 SliceU8 runQueueCommands(SliceU8);
 SliceU8 clearQueue(SliceU8);
 SliceU8 printQueueWrapper (SliceU8);
+SliceU8 readVersionWrapper (SliceU8);
 
 #endif

@@ -60,7 +60,7 @@ void scheduler_init(command_entry *, uint8_t);
         case __LINE__:; \
     } while (0)
 
-#define CR_INIT(f, type, func_name) \
+#define CR_INIT(f, type) \
     TaskBase *cr_base = get_current_taskbase(); \
     if (cr_base->frame_ptr == NULL) { \
         void *p = frame_alloc(); \
@@ -68,7 +68,6 @@ void scheduler_init(command_entry *, uint8_t);
         cr_base->frame_ptr = p; \
         memset(p, 0, sizeof(type)); \
         cr_base->pc = 0; \
-        cr_base->commandIndex = getCommandIndexFromTable(&func_name); \
     } \
     (f) = (type *)cr_base->frame_ptr; \
     _Static_assert(FRAME_SIZE >= sizeof(type), CR_ASSERT_SPACE_CONCAT("FRAME_SIZE is too small for type:", #type)); \

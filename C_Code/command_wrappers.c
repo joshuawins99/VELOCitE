@@ -50,3 +50,8 @@ SliceU8 printQueueWrapper (SliceU8 data) {
     printQueuedCommands();
     return cstr_to_slice(NULL);
 }
+
+SliceU8 readVersionWrapper (SliceU8 data) {
+    (void)data;
+    return ReadVersion();
+}

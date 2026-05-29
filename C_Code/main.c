@@ -1,6 +1,5 @@
 #include "core_library/fpga_cpu.h"
 #include "core_library/dispatching.h"
-#include "core_library/io.h"
 #include "command_wrappers.h"
 
 #define MAX_COMMANDS 9
@@ -17,7 +16,7 @@ int main () {
 
     registerCommand("rFPGA", readFPGAWrapper);
     registerCommand("wFPGA", writeFPGAWrapper);
-    registerCommand("readFPGAVersion", ReadVersion);
+    registerCommand("readFPGAVersion", readVersionWrapper);
     registerCommand("enterQueue", enterQueueMode);
     registerCommand("exitQueue", exitQueueMode);
     registerCommand("runQueue", runQueueCommands);

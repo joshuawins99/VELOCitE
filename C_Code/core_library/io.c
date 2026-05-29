@@ -1,7 +1,7 @@
 #include "io.h"
 #include "utility.h"
 
-char get_char() {
+char get_char(void) {
     while (ReadIO(UART_CPU_BaseAddress+(4*ADDR_WORD)) != 0);
     return ReadIO(UART_CPU_BaseAddress+(3*ADDR_WORD));
 }
@@ -51,7 +51,7 @@ void PrintSlice(uint8_t line, const SliceU8 data) {
     }
 }
 
-SliceU8 ReadVersion() {
+SliceU8 ReadVersion(void) {
     static char readversion[VersionStringSize];
     char current_char;
     uint8_t count = 0;
