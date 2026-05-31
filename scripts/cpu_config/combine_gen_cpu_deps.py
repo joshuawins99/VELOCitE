@@ -21,7 +21,12 @@ def generate_script(write_to_file=True):
     for m in modules:
         local_modules.append(".".join(os.path.splitext(m)[0].split("/")))
 
+    velocite_version_file_path = os.path.normpath(f"{current_directory}/../../version")
+    with open(velocite_version_file_path, 'r') as file:
+        velocite_version = file.readline()
+
     output_lines = ["#!/usr/bin/env python3\n"]
+    output_lines.append(f'velocite_version = "{velocite_version}"\n')
 
     for filename in modules:
         with open(f"{current_directory}/{filename}", "r") as f:

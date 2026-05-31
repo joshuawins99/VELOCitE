@@ -4,7 +4,9 @@ from collections import namedtuple
 from cpu_config_helpers import sanitize_identifier, get_repeat_suffix
 from registers import reorder_tree
 
-def export_verilog_headers(parsed_configs, submodule_reg_map, directory_path, reg_width_bytes=4, user_modules_only=False, verilog_muxes=False, verilog_regs=False, strip_verilog=False, verilog_module_names=False):
+def export_verilog_headers(parsed_configs, submodule_reg_map, directory_path, reg_width_bytes=4, 
+                           user_modules_only=False, verilog_muxes=False, verilog_regs=False, 
+                           strip_verilog=False, verilog_module_names=False, file_per_module=False):
     regs_package_mask_list = []
     mux_package_mask_list = []
     generate_files = True
@@ -12,8 +14,9 @@ def export_verilog_headers(parsed_configs, submodule_reg_map, directory_path, re
         output_dir = cpu_name
         os.makedirs(f"{directory_path}/{output_dir}", exist_ok=True)
         current_submodule_map = reorder_tree(submodule_reg_map)[cpu_name]
-        verilog_filename = os.path.join(directory_path, output_dir, f"{cpu_name}_muxes.sv")
-        verilog_reg_filename = os.path.join(directory_path, output_dir, f"{cpu_name}_registers.sv")
+        if not file_per_module:
+            verilog_filename = os.path.join(directory_path, output_dir, f"{cpu_name}_muxes.sv")
+            verilog_reg_filename = os.path.join(directory_path, output_dir, f"{cpu_name}_registers.sv")
         verilog_lines = []
         verilog_lines.append(f"// Auto-generated data mux modules and packages\n")
         #Case where function is called and no submodules are present
@@ -34,6 +37,7 @@ def export_verilog_headers(parsed_configs, submodule_reg_map, directory_path, re
                 mod_regs = module.get("regs", {})
                 mod_reg_offsets = []
                 mod_reg_absolutes = []
+                package_name = ""
 
                 if not cpu_config[section][module_name]["metadata"].get("repeat_instance", ''):
                     base_addr = module["bounds"][0]
@@ -61,8 +65,9 @@ def export_verilog_headers(parsed_configs, submodule_reg_map, directory_path, re
                                 mod_reg_offsets_joined = "\n    ".join(mod_reg_offsets)
                                 mod_reg_absolutes_joined = "\n    ".join(mod_reg_absolutes)
                                 local_regs_package_mask_list.append(stripped_name)
+                                package_name = stripped_name if not (verilog_module_names or generated_naming_option != "enumeration") else mod_desc_name
                                 mod_reg_package.append(f"""\
-package {stripped_name if not (verilog_module_names or generated_naming_option != "enumeration") else mod_desc_name}_regs_package;
+package {package_name}_regs_package;
     // Offsets
     {mod_reg_offsets_joined}
 
@@ -79,6 +84,12 @@ package {stripped_name if not (verilog_module_names or generated_naming_option !
     endfunction
 endpackage                       
 """)
+                if file_per_module and verilog_regs and mod_reg_offsets:
+                        verilog_reg_filename = os.path.join(directory_path, output_dir, f"{cpu_name}_{package_name}_registers.sv")
+                        with open(verilog_reg_filename, "w") as f:
+                            f.write("\n".join(mod_reg_package))
+                            print(f"Verilog register modules and packages for '{package_name}' on '{cpu_name}' saved to: {os.path.abspath(verilog_reg_filename)}")
+                            mod_reg_package = []
 
                 if module_name == "BaseAddress" or not isinstance(module, dict):
                     continue
@@ -111,6 +122,7 @@ endpackage
                 mod_data_i_values = []
                 mod_data_i_assignments = []
                 stripped_name_compare_value = ""
+                stripped_name = ""
 
                 if cpu_config[section][module_name]["metadata"].get("repeat_instance", ''):
                     continue
@@ -299,19 +311,27 @@ endmodule
                     if not mux_package_mask_list.count(stripped_name_compare_value) > 1:
                         verilog_lines.append(verilog_boilerplate)
 
+                if file_per_module and generate_files and package_module_naming:
+                    verilog_filename = os.path.join(directory_path, output_dir, f"{cpu_name}_{package_module_naming}_muxes.sv")
+                    if verilog_muxes:
+                        with open(verilog_filename, "w") as f:
+                            f.write("\n".join(verilog_lines))
+                            print(f"Verilog mux modules and packages for '{package_module_naming}' on '{cpu_name}' saved to: {os.path.abspath(verilog_filename)}")
+                            verilog_lines = []
+
         for item in local_mux_package_mask_list:
             mux_package_mask_list.append(item)
 
         for item in local_regs_package_mask_list:
             regs_package_mask_list.append(item)
 
-        if generate_files == True:
-            if verilog_muxes:
-                with open(verilog_filename, "w") as f:
-                    f.write("\n".join(verilog_lines))
-                    print(f"Verilog mux modules and packages for {cpu_name} saved to: {os.path.abspath(verilog_filename)}")
-            if verilog_regs:
-                with open(verilog_reg_filename, "w") as f:
-                    f.write("\n".join(mod_reg_package))
-                    print(f"Verilog register modules and packages for {cpu_name} saved to: {os.path.abspath(verilog_reg_filename)}")
-            
+        if not file_per_module and generate_files:
+                if verilog_muxes:
+                    with open(verilog_filename, "w") as f:
+                        f.write("\n".join(verilog_lines))
+                        print(f"Verilog mux modules and packages for '{cpu_name}' saved to: {os.path.abspath(verilog_filename)}")
+                if verilog_regs:
+                    with open(verilog_reg_filename, "w") as f:
+                        f.write("\n".join(mod_reg_package))
+                        print(f"Verilog register modules and packages for '{cpu_name}' saved to: {os.path.abspath(verilog_reg_filename)}")
+                

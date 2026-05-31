@@ -5,6 +5,11 @@ import copy
 import re
 import os
 
+def go_up_n_levels(path, levels):
+    for _ in range(levels):
+        path = os.path.dirname(path)
+    return path
+
 def sanitize_identifier(text):
         return re.sub(r'\W+', '_', text.strip()).upper()
 

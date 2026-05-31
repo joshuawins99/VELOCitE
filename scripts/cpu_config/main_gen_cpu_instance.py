@@ -20,12 +20,32 @@ directory_path = "."
 build_script = "build_single_module.sh"
 reference_system_file = "ref_fpga_sys_lite.sv"
 
-parser = argparse.ArgumentParser(prog="generate_cpu_instance.py", description="Generate CPU Instance", add_help=False,
-                                 formatter_class=lambda prog: argparse.HelpFormatter(prog, max_help_position=50))
+try: #Test for existance of velocite_version. If not, then assume submodule use
+    velocite_version # type: ignore
+except:
+    velocite_version_file_path = os.path.normpath(f"{go_up_n_levels(current_directory, 3)}/version")
+    with open(velocite_version_file_path, 'r') as file:
+        velocite_version = file.readline()
+
+GEN_HEADER_FLAGS = {
+    "strip-verilog": "strip_verilog",
+    "new-python": "new_python_header",
+    "new-c": "new_c_header",
+    "zig": "zig_header",
+    "verilog-muxes": "verilog_muxes",
+    "verilog-regs": "verilog_regs",
+    "use-verilog-module-names": "verilog_module_names",
+    "verilog-files-per-module": "verilog_files_per_module",
+}
+
+parser = argparse.ArgumentParser(prog="generate_cpu_instance.py", description=f"Generate CPU Instance (VELOCitE v{velocite_version})", add_help=False,
+                                 formatter_class=lambda prog: argparse.RawTextHelpFormatter(prog, max_help_position=50))
 parser.add_argument( "--help", action="help", help="Show this help message and exit")
 parser.add_argument("--build", action='store_true', help="Build CPU Code and create combined output sv")
-parser.add_argument("--configs-path", help="Config directories path")
-parser.add_argument("--gen-headers", nargs="+", help="Generate header files. Options are: new-python, new-c, zig, verilog-muxes, verilog-regs, strip-verilog")
+parser.add_argument("--configs-path", help="Specify config directories path")
+parser.add_argument("--output-path", help="Specify output path for generated files")
+parser.add_argument("--gen-headers", nargs="+", choices=list(GEN_HEADER_FLAGS.keys()), metavar="LANG", 
+                    help="Generate/Configure header files. Options are:\n  " + "\n  ".join(list(GEN_HEADER_FLAGS.keys())))
 parser.add_argument("--print-all-registers", action='store_true', help="Prints all registers to console")
 parser.add_argument("--print-user-registers", action='store_true', help="Prints user registers to console")
 parser.add_argument("--save-all-registers", action='store_true', help="Saves all registers to a cpu_registers.txt file")
@@ -37,6 +57,11 @@ if args.configs_path:
     directory_path = args.configs_path
 
 absolute_path = os.path.abspath(directory_path)
+absolute_output_path = absolute_path
+
+if args.output_path:
+    absolute_output_path = os.path.abspath(args.output_path)
+    os.makedirs(f"{absolute_output_path}", exist_ok=True)
 
 #folders = list_folders(directory_path)
 #print(folders)
@@ -56,67 +81,50 @@ assign_auto_addresses(parsed_configs, submodule_reg_map)
 
 if args.print_all_registers:
     if (filtered_dirs):
-        dump_all_registers_from_configs(parsed_configs, submodule_reg_map, absolute_path, user_modules_only=False)
+        dump_all_registers_from_configs(parsed_configs, submodule_reg_map, absolute_output_path, user_modules_only=False)
 
 if args.save_all_registers:
     if (filtered_dirs):
-        dump_all_registers_from_configs(parsed_configs, submodule_reg_map, absolute_path, user_modules_only=False, save_to_file=True,print_to_console=False)
+        dump_all_registers_from_configs(parsed_configs, submodule_reg_map, absolute_output_path, user_modules_only=False, 
+                                        save_to_file=True, print_to_console=False)
 
 if args.print_user_registers:
     if (filtered_dirs):
-        dump_all_registers_from_configs(parsed_configs, submodule_reg_map, absolute_path, user_modules_only=True)
+        dump_all_registers_from_configs(parsed_configs, submodule_reg_map, absolute_output_path, user_modules_only=True)
 
 if args.save_user_registers:
     if (filtered_dirs):
-        dump_all_registers_from_configs(parsed_configs, submodule_reg_map, absolute_path, user_modules_only=True, save_to_file=True, print_to_console=True)
+        dump_all_registers_from_configs(parsed_configs, submodule_reg_map, absolute_output_path, user_modules_only=True, 
+                                        save_to_file=True, print_to_console=True)
 
-zig_header = False
+header_flags = {flag: False for flag in GEN_HEADER_FLAGS.values()}
 if args.gen_headers:
-    new_python_header = False
-    new_c_header = False
-    verilog_muxes = False
-    verilog_regs = False
-    strip_verilog = False
-    verilog_module_names = False
+            
     for header in args.gen_headers:
-        match header:
-            case "strip-verilog": #Strips prefix of generated packages and modules
-                strip_verilog = True
-            case "new-python":
-                new_python_header = True
-            case "new-c":
-                new_c_header = True
-            case "zig":
-                zig_header = True
-            case "verilog-muxes":
-                verilog_muxes = True
-            case "verilog-regs":
-                verilog_regs = True
-            case "use-verilog-module-names":
-                verilog_module_names = True
+        if header not in GEN_HEADER_FLAGS:
+            raise SyntaxError(f"'{header}' is not a valid header option")
+
+        header_flags[GEN_HEADER_FLAGS[header]] = True
     
     if (filtered_dirs):
         export_c_headers(parsed_configs=parsed_configs, submodule_reg_map=submodule_reg_map, 
-                         directory_path=directory_path, reg_width_bytes=4, user_modules_only=False, new_c_header=new_c_header)
+                         directory_path=absolute_output_path, reg_width_bytes=4, user_modules_only=False, new_c_header=header_flags["new_c_header"])
         export_python_headers(parsed_configs=parsed_configs, submodule_reg_map=submodule_reg_map, 
-                              directory_path=directory_path, reg_width_bytes=4, user_modules_only=False, new_python_header=new_python_header)
-        if zig_header:
-            export_zig_headers(parsed_configs=parsed_configs, submodule_reg_map=submodule_reg_map, directory_path=directory_path, 
+                              directory_path=absolute_output_path, reg_width_bytes=4, user_modules_only=False, 
+                              new_python_header=header_flags["new_python_header"])
+        if header_flags["zig_header"]:
+            export_zig_headers(parsed_configs=parsed_configs, submodule_reg_map=submodule_reg_map, directory_path=absolute_output_path, 
                                reg_width_bytes=4, user_modules_only=False)
-        if verilog_muxes or verilog_regs:
-            export_verilog_headers(parsed_configs=parsed_configs, submodule_reg_map=submodule_reg_map, directory_path=directory_path, 
-                                   reg_width_bytes=4, user_modules_only=False, verilog_muxes=verilog_muxes, 
-                                   verilog_regs=verilog_regs, strip_verilog=strip_verilog, verilog_module_names=verilog_module_names)
+        if header_flags["verilog_muxes"] or header_flags["verilog_regs"]:
+            export_verilog_headers(parsed_configs=parsed_configs, submodule_reg_map=submodule_reg_map, directory_path=absolute_output_path, 
+                                   reg_width_bytes=4, user_modules_only=False, verilog_muxes=header_flags["verilog_muxes"], 
+                                   verilog_regs=header_flags["verilog_regs"], strip_verilog=header_flags["strip_verilog"], 
+                                   verilog_module_names=header_flags["verilog_module_names"], file_per_module=header_flags["verilog_files_per_module"])
 
 code_folders = get_code_folders(parsed_configs)
 #print(code_folders)
 
 default_c_code_path = "C_Code"  #Default Folder
-
-def go_up_n_levels(path, levels):
-    for _ in range(levels):
-        path = os.path.dirname(path)
-    return path
 
 if args.build:
     if os.path.exists(f"{go_up_n_levels(current_directory,3)}/{build_script}"):
@@ -131,31 +139,31 @@ if args.build:
                 )
                 build_folder = os.path.abspath(build_folder)
                 parent_directory = go_up_n_levels(current_directory,3)
-                print(f"Running build for {cpu_name} using Code folder: {build_folder}\n")
+                print(f"Running build for '{cpu_name}' using Code folder: {build_folder}\n")
                 try:
                     if args.gen_headers:
                         if (build_folder != default_c_code_path): 
                             if os.path.exists(f"{build_folder}/{cpu_name}_registers.h"):
                                 os.remove(f"{build_folder}/{cpu_name}_registers.h")
-                            print(f"Moved generated header: {absolute_path}/{cpu_name}/{cpu_name}_registers.h -> {build_folder}\n")
-                            shutil.move(f"{absolute_path}/{cpu_name}/{cpu_name}_registers.h", build_folder)
-                            if zig_header:
+                            print(f"Moved generated header: {absolute_output_path}/{cpu_name}/{cpu_name}_registers.h -> {build_folder}\n")
+                            shutil.move(f"{absolute_output_path}/{cpu_name}/{cpu_name}_registers.h", build_folder)
+                            if header_flags["zig_header"]:
                                 if os.path.exists(f"{build_folder}/{cpu_name}_registers.zig"):
                                     os.remove(f"{build_folder}/{cpu_name}_registers.zig")
-                                print(f"Moved generated header: {absolute_path}/{cpu_name}/{cpu_name}_registers.zig -> {build_folder}\n")
-                                shutil.move(f"{absolute_path}/{cpu_name}/{cpu_name}_registers.zig", build_folder)
+                                print(f"Moved generated header: {absolute_output_path}/{cpu_name}/{cpu_name}_registers.zig -> {build_folder}\n")
+                                shutil.move(f"{absolute_output_path}/{cpu_name}/{cpu_name}_registers.zig", build_folder)
                     result = subprocess.run(["bash", f"{build_script}", "--code-folder", build_folder], cwd=parent_directory, capture_output=True, text=True)
                     if result.returncode != 0:
                         print(result.stderr)
                         raise subprocess.CalledProcessError(returncode=result.returncode, cmd=" ".join(result.args))
                     else:
-                       print(result.stdout + result.stderr) 
+                        print(result.stdout + result.stderr) 
                 except FileNotFoundError:
                     raise FileNotFoundError (f"Build folder not found for {cpu_name}: {build_folder}")
 
                 curr_config_dict = {cpu_name: parsed_configs.get(cpu_name)}
-                save_systemverilog_files(curr_config_dict, submodule_reg_map, absolute_path)
-                update_cpu_modules_file(curr_config_dict, absolute_path, reference_file=f"{parent_directory}/{reference_system_file}")
+                save_systemverilog_files(curr_config_dict, submodule_reg_map, absolute_output_path)
+                update_cpu_modules_file(curr_config_dict, absolute_output_path, reference_file=f"{parent_directory}/{reference_system_file}")
                 #subprocess.run(["bash", "-c", "git clean -fdx"], cwd=parent_directory, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     else:
         raise FileNotFoundError(f"{go_up_n_levels(current_directory,3)}/{build_script} not found. Are you using the source repo?")
@@ -163,8 +171,8 @@ if args.build:
 else:
     if os.path.exists(f"{go_up_n_levels(current_directory,1)}/{reference_system_file}"):
         if (filtered_dirs):
-            save_systemverilog_files(parsed_configs, submodule_reg_map, absolute_path)
-            update_cpu_modules_file(parsed_configs, absolute_path, reference_file=reference_system_file)
+            save_systemverilog_files(parsed_configs, submodule_reg_map, absolute_output_path)
+            update_cpu_modules_file(parsed_configs, absolute_output_path, reference_file=reference_system_file)
     else:
         raise FileNotFoundError(f"{go_up_n_levels(current_directory,1)}/{reference_system_file} not found. Are you using a release build?")
 

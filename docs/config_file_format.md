@@ -183,7 +183,7 @@ The ```Generated_Naming :``` keyword allows for a per module naming scheme for g
     * The default option.
 * module
     * Names of packages and modules are named corresponding to the ```Name :```. References to submodules will be of the enumeration type.
-* module_sum
+* module_sub
     * Same as module but submodules will also correspond to the ```Name :``` of that submodule.
 
 Example:
