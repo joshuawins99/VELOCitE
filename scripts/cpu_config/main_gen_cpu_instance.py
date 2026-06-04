@@ -6,6 +6,7 @@ import argparse
 from cpu_config_parser import *
 from verilog import *
 from registers import *
+from register_docs import *
 
 current_directory = os.path.abspath(__file__)
 
@@ -28,6 +29,8 @@ except:
         velocite_version = file.readline()
 
 GEN_HEADER_FLAGS = {
+    "python": "python_header",
+    "c": "c_header",
     "strip-verilog": "strip_verilog",
     "new-python": "new_python_header",
     "new-c": "new_c_header",
@@ -40,16 +43,19 @@ GEN_HEADER_FLAGS = {
 
 parser = argparse.ArgumentParser(prog="generate_cpu_instance.py", description=f"Generate CPU Instance (VELOCitE v{velocite_version})", add_help=False,
                                  formatter_class=lambda prog: argparse.RawTextHelpFormatter(prog, max_help_position=50))
-parser.add_argument( "--help", action="help", help="Show this help message and exit")
+parser.add_argument("--help", action="help", help="Show this help message and exit")
+parser.add_argument("--version", action="version", help="Show version and exit", version=f"Generate CPU Instance (VELOCitE v{velocite_version})")
 parser.add_argument("--build", action='store_true', help="Build CPU Code and create combined output sv")
 parser.add_argument("--configs-path", help="Specify config directories path")
 parser.add_argument("--output-path", help="Specify output path for generated files")
-parser.add_argument("--gen-headers", nargs="+", choices=list(GEN_HEADER_FLAGS.keys()), metavar="LANG", 
+parser.add_argument("--gen-headers", nargs="*", choices=list(GEN_HEADER_FLAGS.keys()), metavar="LANG", default=argparse.SUPPRESS,
                     help="Generate/Configure header files. Options are:\n  " + "\n  ".join(list(GEN_HEADER_FLAGS.keys())))
 parser.add_argument("--print-all-registers", action='store_true', help="Prints all registers to console")
 parser.add_argument("--print-user-registers", action='store_true', help="Prints user registers to console")
 parser.add_argument("--save-all-registers", action='store_true', help="Saves all registers to a cpu_registers.txt file")
 parser.add_argument("--save-user-registers", action='store_true', help="Saves user registers to a cpu_registers.txt file")
+parser.add_argument("--save-all-registers-html", nargs="?", choices = ["dark", "light"], const = "dark", default = "", help="Saves all registers to a cpu_registers.html file")
+parser.add_argument("--save-user-registers-html", nargs="?", choices = ["dark", "light"], const = "dark", default = "", help="Saves user registers to a cpu_registers.html file")
 
 args = parser.parse_args()
 
@@ -96,30 +102,57 @@ if args.save_user_registers:
     if (filtered_dirs):
         dump_all_registers_from_configs(parsed_configs, submodule_reg_map, absolute_output_path, user_modules_only=True, 
                                         save_to_file=True, print_to_console=True)
+        
+if args.save_user_registers_html:
+    if (filtered_dirs):
+        if (args.save_all_registers_html == "light"):
+            dark_mode = False
+        else:
+            dark_mode = True
+        dump_all_registers_html(parsed_configs, submodule_reg_map, absolute_output_path, user_modules_only=True, 
+                                save_to_file=True, print_to_console=False, dark_mode=dark_mode)
+        
+if args.save_all_registers_html:
+    if (filtered_dirs):
+        if (args.save_all_registers_html == "light"):
+            dark_mode = False
+        else:
+            dark_mode = True
+        dump_all_registers_html(parsed_configs, submodule_reg_map, absolute_output_path, user_modules_only=False, 
+                                save_to_file=True, print_to_console=False, dark_mode=dark_mode)
 
 header_flags = {flag: False for flag in GEN_HEADER_FLAGS.values()}
-if args.gen_headers:
-            
-    for header in args.gen_headers:
-        if header not in GEN_HEADER_FLAGS:
-            raise SyntaxError(f"'{header}' is not a valid header option")
 
-        header_flags[GEN_HEADER_FLAGS[header]] = True
-    
-    if (filtered_dirs):
-        export_c_headers(parsed_configs=parsed_configs, submodule_reg_map=submodule_reg_map, 
-                         directory_path=absolute_output_path, reg_width_bytes=4, user_modules_only=False, new_c_header=header_flags["new_c_header"])
-        export_python_headers(parsed_configs=parsed_configs, submodule_reg_map=submodule_reg_map, 
-                              directory_path=absolute_output_path, reg_width_bytes=4, user_modules_only=False, 
-                              new_python_header=header_flags["new_python_header"])
-        if header_flags["zig_header"]:
-            export_zig_headers(parsed_configs=parsed_configs, submodule_reg_map=submodule_reg_map, directory_path=absolute_output_path, 
-                               reg_width_bytes=4, user_modules_only=False)
-        if header_flags["verilog_muxes"] or header_flags["verilog_regs"]:
-            export_verilog_headers(parsed_configs=parsed_configs, submodule_reg_map=submodule_reg_map, directory_path=absolute_output_path, 
-                                   reg_width_bytes=4, user_modules_only=False, verilog_muxes=header_flags["verilog_muxes"], 
-                                   verilog_regs=header_flags["verilog_regs"], strip_verilog=header_flags["strip_verilog"], 
-                                   verilog_module_names=header_flags["verilog_module_names"], file_per_module=header_flags["verilog_files_per_module"])
+try: #Check for args.gen_headers
+    if not args.gen_headers: # type: ignore #Set default options if nothing is given
+        args.gen_headers = ["c", "python"]
+
+    if args.gen_headers:            
+        for header in args.gen_headers:
+            if header not in GEN_HEADER_FLAGS:
+                raise SyntaxError(f"'{header}' is not a valid header option")
+
+            header_flags[GEN_HEADER_FLAGS[header]] = True
+        
+        if (filtered_dirs):
+            if (header_flags["python_header"] or header_flags["new_python_header"]):
+                export_python_headers(parsed_configs=parsed_configs, submodule_reg_map=submodule_reg_map, 
+                                      directory_path=absolute_output_path, reg_width_bytes=4, user_modules_only=False, 
+                                      new_python_header=header_flags["new_python_header"])
+            if (header_flags["c_header"] or header_flags["new_c_header"]):
+                export_c_headers(parsed_configs=parsed_configs, submodule_reg_map=submodule_reg_map, 
+                                 directory_path=absolute_output_path, reg_width_bytes=4, user_modules_only=False, new_c_header=header_flags["new_c_header"])
+            
+            if header_flags["zig_header"]:
+                export_zig_headers(parsed_configs=parsed_configs, submodule_reg_map=submodule_reg_map, directory_path=absolute_output_path, 
+                                   reg_width_bytes=4, user_modules_only=False)
+            if header_flags["verilog_muxes"] or header_flags["verilog_regs"]:
+                export_verilog_headers(parsed_configs=parsed_configs, submodule_reg_map=submodule_reg_map, directory_path=absolute_output_path, 
+                                       reg_width_bytes=4, user_modules_only=False, verilog_muxes=header_flags["verilog_muxes"], 
+                                       verilog_regs=header_flags["verilog_regs"], strip_verilog=header_flags["strip_verilog"], 
+                                       verilog_module_names=header_flags["verilog_module_names"], file_per_module=header_flags["verilog_files_per_module"])
+except:
+    pass
 
 code_folders = get_code_folders(parsed_configs)
 #print(code_folders)

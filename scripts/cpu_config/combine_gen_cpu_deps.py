@@ -11,7 +11,8 @@ def generate_script(write_to_file=True):
         "headers/python_headers.py",
         "headers/verilog_headers.py",
         "headers/zig_headers.py",
-        "registers.py", 
+        "registers.py",
+        "register_docs.py",
         "verilog.py", 
         "main_gen_cpu_instance.py"
     ]

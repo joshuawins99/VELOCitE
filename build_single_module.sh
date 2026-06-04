@@ -63,7 +63,12 @@ echo -n ' ' >> version_string.svh
 date --date 'now' '+%a %b %d %r %Z %Y' | sed -e 's/$/"/' -e 's/,/","/g' >> version_string.svh
 cd ..
 
-scripts/create_memory_module.py $CUSTOM_CODE_FOLDER/mem_init.mem rtl/picosoc_mem.v
+if [ "$VERSION_TYPE" = REL ]; then
+    scripts/create_memory_module.py --input-mem $CUSTOM_CODE_FOLDER/mem_init.mem --output-v rtl/picosoc_mem.v --integrated
+else
+    scripts/create_memory_module.py --input-mem $CUSTOM_CODE_FOLDER/mem_init.mem --output-v rtl/picosoc_mem.v
+fi
+
 scripts/create_version_module.py rtl/version_string.svh rtl/version_string.sv
 scripts/concatenate_modules.sh cpu_system_filelist.txt ref_fpga_sys_lite.sv
 

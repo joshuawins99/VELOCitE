@@ -14,7 +14,7 @@ def run_generated_script():
     try:
         # Patch import path
         sys.path.insert(0, os.path.abspath(generator_dir))
-        import combine_gen_cpu_deps
+        import combine_gen_cpu_deps # type: ignore
 
         # Generate and execute code
         code = combine_gen_cpu_deps.generate_script(write_to_file=False)
