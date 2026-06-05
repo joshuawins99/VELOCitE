@@ -185,7 +185,7 @@ if args.build:
                                     os.remove(f"{build_folder}/{cpu_name}_registers.zig")
                                 print(f"Moved generated header: {absolute_output_path}/{cpu_name}/{cpu_name}_registers.zig -> {build_folder}\n")
                                 shutil.move(f"{absolute_output_path}/{cpu_name}/{cpu_name}_registers.zig", build_folder)
-                    result = subprocess.run(["bash", f"{build_script}", "--code-folder", build_folder], cwd=parent_directory, capture_output=True, text=True)
+                    result = subprocess.run(["bash", f"{build_script}", "--code-folder", build_folder, "--gen-cpu-inst-name", cpu_name], cwd=parent_directory, capture_output=True, text=True)
                     if result.returncode != 0:
                         print(result.stderr)
                         raise subprocess.CalledProcessError(returncode=result.returncode, cmd=" ".join(result.args))

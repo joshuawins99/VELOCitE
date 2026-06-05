@@ -6,6 +6,7 @@ CUSTOM_CODE_FOLDER="C_Code"
 BUILD_MODE=""
 VERSION_TYPE=""
 CURRENT_BASE_FOLDER=$(pwd -P)
+GEN_CPU_INSTANCE_NAME=""
 
 resolve_path() {
     local INPUT_PATH="$1"
@@ -28,6 +29,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --code-folder)
             CUSTOM_CODE_FOLDER="$2"
+            shift 2
+            ;;
+        --gen-cpu-inst-name)
+            GEN_CPU_INSTANCE_NAME="$2"
             shift 2
             ;;
         *)
@@ -66,7 +71,7 @@ cd ..
 if [ "$VERSION_TYPE" = REL ]; then
     scripts/create_memory_module.py --input-mem $CUSTOM_CODE_FOLDER/mem_init.mem --output-v rtl/picosoc_mem.v --integrated
 else
-    scripts/create_memory_module.py --input-mem $CUSTOM_CODE_FOLDER/mem_init.mem --output-v rtl/picosoc_mem.v
+    scripts/create_memory_module.py --input-mem $CUSTOM_CODE_FOLDER/mem_init.mem --output-v rtl/picosoc_mem.v --mem-files-name-prefix $GEN_CPU_INSTANCE_NAME
 fi
 
 scripts/create_version_module.py rtl/version_string.svh rtl/version_string.sv

@@ -2,7 +2,7 @@
 import os
 import argparse
 
-def split_into_hex_files(mem_data, base_dir, words):
+def split_into_hex_files(mem_data, base_dir, words, name):
     mem1 = []
     mem2 = []
     mem3 = []
@@ -26,10 +26,10 @@ def split_into_hex_files(mem_data, base_dir, words):
     # Write files
     paths = {}
     for name, data in [
-        ("mem1.mem", mem1),
-        ("mem2.mem", mem2),
-        ("mem3.mem", mem3),
-        ("mem4.mem", mem4),
+        (f"{name}mem1.mem", mem1),
+        (f"{name}mem2.mem", mem2),
+        (f"{name}mem3.mem", mem3),
+        (f"{name}mem4.mem", mem4),
     ]:
         full = os.path.join(base_dir, name)
         with open(full, "w") as f:
@@ -114,14 +114,19 @@ endmodule
     with open(output_file, 'w') as f:
         f.write(verilog_code)
 
-def generate_verilog_mem_files(mem_file, output_file, words=256, offset=0, prefill=1):
+def generate_verilog_mem_files(mem_file, output_file, words=256, offset=0, prefill=1, name=""):
     with open(mem_file, 'r') as f:
         mem_data = [line.strip() for line in f.readlines()]
 
     out_dir = os.path.abspath(os.path.dirname(mem_file))
 
+    if name:
+        name = name + "_"
+    else:
+        name = ""
+
     # Generate hex files and get absolute paths
-    hex_paths = split_into_hex_files(mem_data, out_dir, words)
+    hex_paths = split_into_hex_files(mem_data, out_dir, words, name=name)
 
     verilog_code = f"""module picosoc_mem #(
     parameter address_width = 16,
@@ -150,10 +155,10 @@ def generate_verilog_mem_files(mem_file, output_file, words=256, offset=0, prefi
 `endif
 
         if (PREFILL) begin
-            $readmemh("{hex_paths['mem1.mem']}", mem1, OFFSET);
-            $readmemh("{hex_paths['mem2.mem']}", mem2, OFFSET);
-            $readmemh("{hex_paths['mem3.mem']}", mem3, OFFSET);
-            $readmemh("{hex_paths['mem4.mem']}", mem4, OFFSET);
+            $readmemh("{hex_paths[f'{name}mem1.mem']}", mem1, OFFSET);
+            $readmemh("{hex_paths[f'{name}mem2.mem']}", mem2, OFFSET);
+            $readmemh("{hex_paths[f'{name}mem3.mem']}", mem3, OFFSET);
+            $readmemh("{hex_paths[f'{name}mem4.mem']}", mem4, OFFSET);
         end
     end
 
@@ -182,6 +187,7 @@ if __name__ == "__main__":
     parser.add_argument("--integrated", action='store_true', help="Select between mem file data integration or use readmemh")
     parser.add_argument("--prefill", help="Prefill option. Default is 1", default=1)
     parser.add_argument("--offset", help="Offset for start of load. Default is 0", default=0)
+    parser.add_argument("--mem-files-name-prefix", help="Name prefix for .mem files")
 
     args = parser.parse_args()
 
@@ -190,4 +196,4 @@ if __name__ == "__main__":
     if (args.integrated):
         generate_verilog_integrated(args.input_mem, args.output_v, offset=offset, prefill=prefill)
     else:
-        generate_verilog_mem_files(args.input_mem, args.output_v, offset=offset, prefill=prefill)
+        generate_verilog_mem_files(args.input_mem, args.output_v, offset=offset, prefill=prefill, name=args.mem_files_name_prefix)
