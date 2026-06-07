@@ -19,5 +19,6 @@ uint8_t stringMatchSlice(SliceU8, SliceU8);
 uint32_t checkAddress(uint32_t);
 ParsedCommand ParseCommand(SliceU8);
 uint8_t numParsedArguments (ParsedCommand);
+void *mem_set(void *, int, size_t);
 
 #endif

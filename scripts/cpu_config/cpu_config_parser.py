@@ -40,7 +40,7 @@ def parse_config(file_path, updated_name):
     auto_expr_re = re.compile(r"(\w+)\s*:\s*(TRUE|FALSE)\s*:\s*AUTO\s*:\s*\{(.+?)\}(?:\s*:\s*(\w+))?")
     auto_literal_re = re.compile(r"(\w+)\s*:\s*(TRUE|FALSE)\s*:\s*AUTO\s*:\s*(\d+)(?:\s*:\s*(\w+))?")
     auto_simple_re = re.compile(r"(\w+)\s*:\s*(TRUE|FALSE)\s*:\s*AUTO(?:\s*:\s*(\w+))?")
-    reg_re = re.compile(r"(Reg\d+)\s*:")
+    reg_re = re.compile(r"Reg(\d*)\s*:")
     field_re = re.compile(r"(Field\d+)\s*:")
     name_re = re.compile(r"Name\s*:\s*(.+)")
     repeat_re = re.compile(r"Repeat\s*:\s*(\d+|\{[^}]+\})(?:\s*:\s*(\w+))?")
@@ -401,6 +401,13 @@ def parse_config(file_path, updated_name):
             got_register_name = False
             got_register_description = False
             current_register = reg_match.group(1)
+            if not current_register: #Reg : without num provided
+                if config_data[current_section][current_module]["regs"]:
+                    current_register_count = len(config_data[current_section][current_module]["regs"])
+                    current_register = str(current_register_count)
+                else:
+                    current_register = str(0)
+            current_register = "Reg" + current_register
             if current_register in config_data[current_section][current_module]["regs"]:
                 raise SyntaxError(f"Register '{current_register}' Redefinition in Entry: '{current_module}'")
             config_data[current_section][current_module]["regs"].setdefault(current_register, {})
@@ -410,6 +417,10 @@ def parse_config(file_path, updated_name):
         elif current_module and name_match:
             name_val = name_match.group(1)
             if current_register and not got_register_name:
+                for _, register_data in config_data[current_section][current_module]["regs"].items(): #Check for conflicting names
+                    reg_name = register_data.get("name", "")
+                    if (reg_name == name_val):
+                        raise SyntaxError(f"Register name '{name_val}' in '{current_module}' already exists")
                 config_data[current_section][current_module]["regs"][current_register]["name"] = name_val
                 got_register_name = True
             elif current_field:

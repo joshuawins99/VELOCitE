@@ -1,5 +1,4 @@
 #include "coroutines.h"
-#include "utility.h"
 #include "io.h"
 #include "dispatching.h"
 
@@ -64,7 +63,7 @@ pidcr_t scheduler_start(FUNCTION_SIGNATURE, uint32_t cmd_index, SliceU8 data) {
     for (pidcr_t i = 0; i < MAX_TASKS; i++) {
         if (g_tasks[i].func == NULL) {
             // zero the task slot
-            memset(&g_tasks[i], 0, sizeof(Task));
+            mem_set(&g_tasks[i], 0, sizeof(Task));
 
             // Find PID that is not in use currently
             pidcr_t pid;
@@ -121,7 +120,7 @@ void scheduler_kill_pid(pidcr_t pid) {
     if (t->base.frame_ptr) {
         frame_free(t->base.frame_ptr);
     }
-    memset(t, 0, sizeof(Task));
+    mem_set(t, 0, sizeof(Task));
     t->is_dead = 1;
 }
 

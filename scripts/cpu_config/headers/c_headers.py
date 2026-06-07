@@ -44,35 +44,87 @@ typedef struct {{
 typedef struct {{
     CompactRegisterBlock block;
     size_t offset;
-}} Register;
+}} RegisterBase;
+
+typedef struct {{
+    RegisterBase type;
+}} RegisterRead;
+
+typedef struct {{
+   RegisterBase type;
+}} RegisterWrite;
+
+typedef struct {{
+   RegisterBase type;
+}} RegisterReadWrite;
 
 static inline uintptr_t RegAt(CompactRegisterBlock blk, size_t index) {{
     return blk.base + index * blk.address_wording;
 }}
 
-static inline uintptr_t RegAddr(Register reg) {{
+static inline uintptr_t RegAddr(RegisterBase reg) {{
     return RegAt(reg.block, reg.offset);
 }}
 
-static inline void Write32(Register reg, uint32_t val) {{
-    volatile uint32_t *ptr = (volatile uint32_t *)RegAddr(reg);
+static inline void Write32_W(RegisterWrite reg, uint32_t val) {{
+    volatile uint32_t *ptr = (volatile uint32_t *)RegAddr(reg.type);
     *ptr = val;
 }}
 
-static inline uint32_t Read32(Register reg) {{
-    volatile uint32_t *ptr = (volatile uint32_t *)RegAddr(reg);
-    return *ptr;
-}}
-
-static inline void Write8(Register reg, uint8_t val) {{
-    volatile uint8_t *ptr = (volatile uint8_t *)RegAddr(reg);
+static inline void Write32_RW(RegisterReadWrite reg, uint32_t val) {{
+    volatile uint32_t *ptr = (volatile uint32_t *)RegAddr(reg.type);
     *ptr = val;
 }}
 
-static inline uint8_t Read8(Register reg) {{
-    volatile uint8_t *ptr = (volatile uint8_t *)RegAddr(reg);
+static inline uint32_t Read32_R(RegisterRead reg) {{
+    volatile uint32_t *ptr = (volatile uint32_t *)RegAddr(reg.type);
     return *ptr;
 }}
+
+static inline uint32_t Read32_RW(RegisterReadWrite reg) {{
+    volatile uint32_t *ptr = (volatile uint32_t *)RegAddr(reg.type);
+    return *ptr;
+}}
+
+static inline void Write8_W(RegisterWrite reg, uint8_t val) {{
+    volatile uint8_t *ptr = (volatile uint8_t *)RegAddr(reg.type);
+    *ptr = val;
+}}
+
+static inline void Write8_RW(RegisterReadWrite reg, uint8_t val) {{
+    volatile uint8_t *ptr = (volatile uint8_t *)RegAddr(reg.type);
+    *ptr = val;
+}}
+
+static inline uint8_t Read8_R(RegisterRead reg) {{
+    volatile uint8_t *ptr = (volatile uint8_t *)RegAddr(reg.type);
+    return *ptr;
+}}
+
+static inline uint8_t Read8_RW(RegisterReadWrite reg) {{
+    volatile uint8_t *ptr = (volatile uint8_t *)RegAddr(reg.type);
+    return *ptr;
+}}
+
+#define Write32(reg, val) _Generic((reg), \\
+    RegisterWrite:     Write32_W, \\
+    RegisterReadWrite: Write32_RW \\
+)(reg, val)
+
+#define Write8(reg, val) _Generic((reg), \\
+    RegisterWrite:     Write8_W, \\
+    RegisterReadWrite: Write8_RW \\
+)(reg, val)
+
+#define Read32(reg) _Generic((reg), \\
+    RegisterRead:      Read32_R, \\
+    RegisterReadWrite: Read32_RW \\
+)(reg)
+
+#define Read8(reg) _Generic((reg), \\
+    RegisterRead:      Read8_R, \\
+    RegisterReadWrite: Read8_RW \\
+)(reg)
                           
 """)
             
@@ -166,7 +218,7 @@ static inline uint8_t Read8(Register reg) {{
                         if (i == (reg_count-subregisters)-1):
                             add_reg_comma = ""
                         if (reg_count-subregisters) > 0:
-                            temp_c_storage.append(f"    .{reg_name_id.lower()} = {{ {{0x{start_addr:04X} , {reg_count}, {reg_width_bytes} }}, {i} }}{add_reg_comma}")
+                            temp_c_storage.append(f"    .{reg_name_id.lower()} = {{ {{ {{0x{start_addr:04X} , {reg_count}, {reg_width_bytes} }}, {i} }} }}{add_reg_comma}")
                         else:
                             temp_c_storage.append(f"}};\n")
 
@@ -186,11 +238,21 @@ static inline uint8_t Read8(Register reg) {{
                             if reg_perm:
                                 c_addr_macros.append(f"// Register Permissions: {reg_perm}")
                         else:
+                            c_reg_perm = "RegisterReadWrite"
+                            match reg_perm:
+                                    case 'W':
+                                        c_reg_perm = "RegisterWrite"
+                                    case 'R':
+                                        c_reg_perm = "RegisterRead"
+                                    case 'R/W':
+                                        c_reg_perm = "RegisterReadWrite"
+                                    case _:
+                                        c_reg_perm = "RegisterReadWrite"
                             if i < (reg_count-subregisters)-1 and (reg_count-subregisters) > 0:
-                                c_lines_storage.append(f"    Register {reg_name_id.lower()}; // [{reg_perm if reg_perm else 'R/W'}] {' '.join(desc_lines)}")
+                                c_lines_storage.append(f"    {c_reg_perm} {reg_name_id.lower()}; // [{reg_perm if reg_perm else 'R/W'}] {' '.join(desc_lines)}")
                             else:
                                 if (reg_count-subregisters) > 0:
-                                    c_lines_storage.append(f"    Register {reg_name_id.lower()}; // [{reg_perm if reg_perm else 'R/W'}] {' '.join(desc_lines)}")
+                                    c_lines_storage.append(f"    {c_reg_perm} {reg_name_id.lower()}; // [{reg_perm if reg_perm else 'R/W'}] {' '.join(desc_lines)}")
                                 c_lines_storage.append(f"}} {module_id.lower()}_t;\n")
                                 c_lines_storage.append(f"static const {module_id.lower()}_t {module_id.lower()} = {{")
                                 c_lines_storage.append(f"    .block = {{ 0x{start_addr:04X}, {reg_count}, {reg_width_bytes} }},")

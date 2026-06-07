@@ -5,6 +5,7 @@
 #include "slice.h"
 #include "dispatching.h"
 #include "fpga_cpu.h"
+#include "utility.h"
 
 typedef uint32_t pidcr_t;
 #define PIDCR_T_MAX UINT32_MAX
@@ -66,7 +67,7 @@ void scheduler_init(command_entry *, uint8_t);
         void *p = frame_alloc(); \
         if (!p) RETURN_SIGNATURE; \
         cr_base->frame_ptr = p; \
-        memset(p, 0, sizeof(type)); \
+        mem_set(p, 0, sizeof(type)); \
         cr_base->pc = 0; \
     } \
     (f) = (type *)cr_base->frame_ptr; \

@@ -7,7 +7,7 @@ Release builds are available in the releases section. This getting started guide
 * Python >= 3.7
 
 ## Constructing a Project
-In order to use this system, a folder must be created with the name of what the system instance should be called. This is important as the Verilog packages and all generates files will be prepended with this name. For this example, the folder will live at the level of the two files grabbed from the release tar.
+In order to use this system, a folder must be created with the name of what the system instance should be called. This is important as the Verilog packages and all generated files will be prepended with this name. For this example, the folder will live at the level of the two files grabbed from the release tar.
 ```bash
 mkdir cpu_test
 ls

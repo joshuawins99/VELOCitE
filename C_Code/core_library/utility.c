@@ -118,3 +118,13 @@ uint8_t numParsedArguments (ParsedCommand data) {
     }
     return numArgs;
 }
+
+void *mem_set(void *dst, int value, size_t n) {
+    unsigned char *p = (unsigned char *)dst;
+    unsigned char v = (unsigned char)value;
+
+    for (size_t i = 0; i < n; i++) {
+        p[i] = v;
+    }
+    return dst;
+}
