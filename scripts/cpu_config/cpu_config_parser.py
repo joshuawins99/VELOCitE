@@ -189,7 +189,6 @@ def parse_config(file_path, updated_name):
                     "registers": reg_count,
                     "metadata": {},
                     "regs": {},
-                    "include_file" : {},
                     "submodule_of" : current_base_module
                 }
             else:
@@ -199,8 +198,7 @@ def parse_config(file_path, updated_name):
                     "auto": True,
                     "registers": reg_count,
                     "metadata": {},
-                    "regs": {},
-                    "include_file" : {}
+                    "regs": {}
                 }
 
             if (expand_regs == "NOEXPREGS"):
@@ -238,7 +236,6 @@ def parse_config(file_path, updated_name):
                     "registers": reg_count,
                     "metadata": {},
                     "regs": {},
-                    "include_file" : {},
                     "submodule_of" : current_base_module
                 }
             else:
@@ -248,8 +245,7 @@ def parse_config(file_path, updated_name):
                     "auto": True,
                     "registers": reg_count,
                     "metadata": {},
-                    "regs": {},
-                    "include_file" : {}
+                    "regs": {}
                 } 
             
             if (expand_regs == "NOEXPREGS"):
@@ -286,7 +282,6 @@ def parse_config(file_path, updated_name):
                     "registers": None,  #Will be inferred later
                     "metadata": {},
                     "regs": {},
-                    "include_file": {},
                     "submodule_of" : current_base_module
                 }
             else:
@@ -296,8 +291,7 @@ def parse_config(file_path, updated_name):
                     "auto": True,
                     "registers": None,  #Will be inferred later
                     "metadata": {},
-                    "regs": {},
-                    "include_file": {}
+                    "regs": {}
                 }
 
             if expand_regs == "NOEXPREGS":
@@ -335,7 +329,6 @@ def parse_config(file_path, updated_name):
                     "bounds": bounds,
                     "metadata": {},
                     "regs": {},
-                    "include_file" : {},
                     "submodule_of" : current_base_module
                 }
             else:
@@ -344,8 +337,7 @@ def parse_config(file_path, updated_name):
                     "flag": flag,
                     "bounds": bounds,
                     "metadata": {},
-                    "regs": {},
-                    "include_file" : {}
+                    "regs": {}
                 }
 
             if (expand_regs == "NOEXPREGS"):
@@ -362,14 +354,15 @@ def parse_config(file_path, updated_name):
             if (current_register == None):
                 include_file = module_include_match.group(1)
                 absolute_path = os.path.normpath(os.path.dirname(parse_file_path(include_file, config_data)))
-                resolved_mod_filepath = resolve_mod_include_filepath(os.path.dirname(os.path.abspath(file_path)), parse_file_path(include_file, config_data), include_file_dirs)
-                config_data[current_section][key]["metadata"]["module_filepath"] = resolved_mod_filepath
                 if absolute_path not in include_file_dirs:
                     include_file_dirs.append(absolute_path)
+                file_name = os.path.basename(parse_file_path(include_file, config_data))
+                resolved_mod_filepath = resolve_mod_include_filepath(os.path.dirname(os.path.abspath(file_path)), file_name , include_file_dirs)
+                config_data[current_section][key]["metadata"]["include_file"] = resolved_mod_filepath
                 existing_metadata = config_data[current_section][current_module]["metadata"]
                 has_name = "name" in existing_metadata
                 has_description = "description" in existing_metadata
-                scrape_metadata(config_data, file_path, include_file_dirs, include_file, config_file_lines, current_line_index, has_name, has_description, get_indent_level(raw_line))
+                scrape_metadata(resolved_mod_filepath, config_file_lines, current_line_index, has_name, has_description, get_indent_level(raw_line))
             else:
                 raise SyntaxError(f"Registers Defined and Module Include Specified in Entry: '{current_module}'")
             

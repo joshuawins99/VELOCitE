@@ -240,14 +240,14 @@ static inline uint8_t Read8_RW(RegisterReadWrite reg) {{
                         else:
                             c_reg_perm = "RegisterReadWrite"
                             match reg_perm:
-                                    case 'W':
-                                        c_reg_perm = "RegisterWrite"
-                                    case 'R':
-                                        c_reg_perm = "RegisterRead"
-                                    case 'R/W':
-                                        c_reg_perm = "RegisterReadWrite"
-                                    case _:
-                                        c_reg_perm = "RegisterReadWrite"
+                                case 'W':
+                                    c_reg_perm = "RegisterWrite"
+                                case 'R':
+                                    c_reg_perm = "RegisterRead"
+                                case 'R/W':
+                                    c_reg_perm = "RegisterReadWrite"
+                                case _:
+                                    c_reg_perm = "RegisterReadWrite"
                             if i < (reg_count-subregisters)-1 and (reg_count-subregisters) > 0:
                                 c_lines_storage.append(f"    {c_reg_perm} {reg_name_id.lower()}; // [{reg_perm if reg_perm else 'R/W'}] {' '.join(desc_lines)}")
                             else:

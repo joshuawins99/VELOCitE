@@ -78,7 +78,7 @@ def parse_file_path(input_param, config_data):
         key = match.group(1)
         return resolve_param(key, [])
 
-    return placeholder_re.sub(replace_placeholder, input_param)
+    return os.path.normpath(placeholder_re.sub(replace_placeholder, input_param))
 
 def list_folders(directory):
     """Returns a list of folders in the given directory."""
@@ -106,16 +106,8 @@ def resolve_mod_include_filepath(base_dir, include_path, include_file_dirs):
         if os.path.exists(candidate):
             return candidate
 
-def scrape_metadata(config_data, file_path, include_file_dirs, include_file, config_file_lines, current_line_index, has_name, has_description, indent_amount=0):
-    include_path = parse_file_path(include_file, config_data)
-    current_path = None
-    base_dir = os.path.dirname(os.path.abspath(file_path))
-
-    current_path = resolve_mod_include_filepath(base_dir, include_path, include_file_dirs)
-
-    # Fallback if nothing matched
-    if current_path is None:
-        current_path = os.path.normpath(os.path.join(base_dir, include_path))
+def scrape_metadata(file_path, config_file_lines, current_line_index, has_name, has_description, indent_amount=0):
+    current_path = file_path
 
     inside_metadata = False
     metadata_block = []

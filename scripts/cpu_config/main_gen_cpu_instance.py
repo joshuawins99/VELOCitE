@@ -142,7 +142,6 @@ try: #Check for args.gen_headers
             if (header_flags["c_header"] or header_flags["new_c_header"]):
                 export_c_headers(parsed_configs=parsed_configs, submodule_reg_map=submodule_reg_map, 
                                  directory_path=absolute_output_path, reg_width_bytes=4, user_modules_only=False, new_c_header=header_flags["new_c_header"])
-            
             if header_flags["zig_header"]:
                 export_zig_headers(parsed_configs=parsed_configs, submodule_reg_map=submodule_reg_map, directory_path=absolute_output_path, 
                                    reg_width_bytes=4, user_modules_only=False)
