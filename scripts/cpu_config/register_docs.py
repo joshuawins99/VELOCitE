@@ -348,7 +348,7 @@ def dump_all_registers_html(parsed_configs, submodule_reg_map, file_path,
                         content.append(
                             "<tr style='border-bottom:1px solid #333;'>"
                             f"<td style='padding:4px;'>{reg_name_str}</td>"
-                            f"<td style='padding:4px;'>0x{reg_addr:04X}</td>"
+                            f"<td style='padding:4px;'>0x{reg_addr:04X} ({reg_addr:d})</td>"
                             f"<td style='padding:4px;'>{reg_perm_str}</td>"
                             f"<td style='padding:4px;'>{reg_desc_str.replace(chr(10), '<br>')}</td>"
                             f"<td style='padding:4px;'>{field_html}</td>"

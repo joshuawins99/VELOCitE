@@ -24,9 +24,6 @@ int main () {
     registerCommand("printQueue", printQueueWrapper);
     registerCommand("help", commandsList);
 
-#ifdef REPL_UART
-    Print(1, "Ref FPGA Sys Lite REPL:");
-#endif
     loop();
     return 0;
 }

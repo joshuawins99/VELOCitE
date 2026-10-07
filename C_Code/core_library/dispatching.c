@@ -7,6 +7,10 @@ static command_entry *cmd_table = NULL;
 static uint8_t cmd_capacity = 0;
 static uint8_t command_count = 0;
 
+#ifdef REPL_UART
+static uint8_t initial_prompt = 1;
+#endif
+
 CommandQueue cmdQueue = { .head = 0, .tail = 0 };
 uint8_t queueMode = 0; // 0 = immediate, 1 = queue mode
 
@@ -160,6 +164,10 @@ void ReadUART(void) {
         char_iter = 0;
     }
 #else
+    if (initial_prompt == 1) {
+        Print(1, "VELOCitE REPL:");
+        initial_prompt = 0;
+    }
     if (cursor_placed == 0) {
         if (queueMode == 1) {
             Print(0, "[Queue] > ");
