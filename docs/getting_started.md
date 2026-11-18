@@ -39,6 +39,7 @@ BUILTIN_MODULES:
     io_e             : TRUE : {'h9000, 'h900C}
         Module_Include : io.txt
     uart_e           : TRUE : {'h9100, 'h9110}
+    cdc_e            : TRUE : {'h9200, 'h920C}
     
 USER_MODULES:
 

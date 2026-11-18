@@ -12,15 +12,23 @@ import cpu_reg_package::*;
     output logic                     cpu_we_o,
     output logic [3:0]               we_ram_o,
     input  logic                     irq_i,
-    output logic [address_width-1:0] address,
+    output logic [address_width-1:0] address_o,
     output logic [data_width-1:0]    external_data_o,
     input  logic [data_width-1:0]    external_data_i,
     input  logic                     uart_rx_i,
     output logic                     uart_tx_o,
     output logic                     uart_rts_o,
-    output logic                     reset
+    output logic                     reset_o,
+    input  logic [num_entries-1:0]   busy_bits_i,
+    output logic [num_entries-1:0]   busy_enable_o,
+    output logic [num_entries-1:0]   busy_reset_module_o
 `endif
 );
+    logic [address_width-1:0] address;
+    logic                     reset = 1'b1;
+    logic [num_entries-1:0]   busy_bits;
+    logic [num_entries-1:0]   busy_enable;
+    logic [num_entries-1:0]   busy_reset_module;
 
 `ifndef SIM
     logic                     clk_i;
@@ -29,7 +37,6 @@ import cpu_reg_package::*;
     logic                     cpu_we_o;
     logic [3:0]               we_ram_o;
     logic                     irq_i;
-    logic [address_width-1:0] address;
     logic                     cpu_halt_i;
 
     logic [data_width-1:0]    external_data_o;
@@ -38,9 +45,12 @@ import cpu_reg_package::*;
     logic                     uart_rx_i;
     logic                     uart_tx_o;
     logic                     uart_rts_o;
-
-    logic                     reset = 1'b1;
-
+`else
+    assign address_o           = address;
+    assign busy_bits           = busy_bits_i;
+    assign busy_enable_o       = busy_enable;
+    assign busy_reset_module_o = busy_reset_module;
+    assign reset_o             = reset;
 `endif
 
     data_reg_inputs_t data_reg_inputs;
@@ -48,21 +58,24 @@ import cpu_reg_package::*;
     data_reg_inputs_t data_reg_inputs_combined;
 
 `ifndef SIM
-    assign clk_i                     = cpubus.clk_i;
-    assign reset_i                   = cpubus.reset_i;
-    assign irq_i                     = cpubus.irq_i;
-    assign cpubus.data_o             = cpu_data_o;
-    assign data_reg_inputs_interface = cpubus.data_i_cpu;
-    assign cpubus.we_o               = cpu_we_o;
-    assign cpubus.address_o          = address;
-    assign cpubus.cpu_reset_o        = reset;
-    assign cpu_halt_i                = cpubus.cpu_halt_i;
-    assign cpubus.external_data_o    = external_data_o;
-    assign external_data_i           = cpubus.external_data_i;
-    assign uart_rx_i                 = cpubus.uart_rx_i;
-    assign cpubus.uart_tx_o          = uart_tx_o;
-    assign cpubus.uart_rts_o         = uart_rts_o;
-    assign cpubus.we_ram_o           = we_ram_o;
+    assign clk_i                      = cpubus.clk_i;
+    assign reset_i                    = cpubus.reset_i;
+    assign irq_i                      = cpubus.irq_i;
+    assign cpubus.data_o              = cpu_data_o;
+    assign data_reg_inputs_interface  = cpubus.data_i_cpu;
+    assign cpubus.we_o                = cpu_we_o;
+    assign cpubus.address_o           = address;
+    assign cpubus.cpu_reset_o         = reset;
+    assign cpu_halt_i                 = cpubus.cpu_halt_i;
+    assign cpubus.external_data_o     = external_data_o;
+    assign external_data_i            = cpubus.external_data_i;
+    assign uart_rx_i                  = cpubus.uart_rx_i;
+    assign cpubus.uart_tx_o           = uart_tx_o;
+    assign cpubus.uart_rts_o          = uart_rts_o;
+    assign cpubus.we_ram_o            = we_ram_o;
+    assign busy_bits                  = cpubus.busy_bits_i;
+    assign cpubus.busy_enable_o       = busy_enable;
+    assign cpubus.busy_reset_module_o = busy_reset_module;
 `endif
 
     logic irq_io;
@@ -229,6 +242,23 @@ import cpu_reg_package::*;
         .uart_tx_o       (uart_tx_o),
         .uart_rx_i       (uart_rx_i),
         .uart_rts_o      (uart_rts_o)
+    );
+
+    bus_cdc_regs #(
+        .BaseAddress         (get_address_start(cdc_e)),
+        .address_width       (address_width),
+        .data_width          (data_width),
+        .Address_Wording     (4)
+    ) bus_cdc_regs_rv32_1 (
+        .clk_i               (clk_i),
+        .reset_i             (reset),
+        .address_i           (address),
+        .data_i              (cpu_data_o),
+        .data_o              (data_reg_inputs[cdc_e]),
+        .rd_wr_i             (cpu_we_o),
+        .busy_bits_i         (busy_bits),
+        .busy_enable_o       (busy_enable),
+        .busy_reset_module_o (busy_reset_module)
     ); 
 
 endmodule

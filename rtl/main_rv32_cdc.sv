@@ -65,7 +65,10 @@ import cpu_reg_package::*;
         .cdc_clks_i            (cdc_clks_i),
         .cpubus_i              (main_rv32_cpubus_internal),
         .cpubus_o              (cdc_cpubus_internal),
-        .busy_o                (cdc_busy)
+        .busy_o                (cdc_busy),
+        .busy_bits_o           (main_rv32_cpubus_internal.busy_bits_i),
+        .busy_enable_i         (main_rv32_cpubus_internal.busy_enable_o),
+        .busy_reset_module_i   (main_rv32_cpubus_internal.busy_reset_module_o)
     );
 
 endmodule

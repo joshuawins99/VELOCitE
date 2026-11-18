@@ -308,7 +308,8 @@ def update_cpu_modules_file(parsed_configs, base_directory, reference_file="ref_
             "bus_cdc",
             "main_rv32_cdc",
             "serv*",
-            "wishbone_to_native_mem"
+            "wishbone_to_native_mem",
+            "bus_cdc_regs"
         }
 
         for module_pattern in MODULES_LIST:
@@ -353,20 +354,36 @@ def update_cpu_modules_file(parsed_configs, base_directory, reference_file="ref_
             "uart_e"          : "uart_cpu",
             "io_e"            : "io_cpu",
             "version_string_e": "version_string",
-            "ram_e"           : "bram_contained_rv32"
+            "ram_e"           : "bram_contained_rv32",
+            "cdc_e"           : "bus_cdc_regs"
         }
 
-        for module, details in builtin_modules.items():
-            if details["flag"] == "FALSE":
+        cdc_string = """
+    assign busy_enable = '1;
+    assign busy_reset_module = '0;
+        """
+
+        builtin_modules_disabled_map = {}
+        for module_enum, module_name in MODULE_NAME_MAPPING.items(): # By default set all builtins to false in case entry doesnt exist in config file
+            builtin_modules_disabled_map[module_enum] = "FALSE"
+
+        for module, details in builtin_modules.items(): # Overwrite TRUE/FALSE if module is defined and set to appropriate value
+            builtin_modules_disabled_map[module] = details["flag"]
+
+        for module, enabled in builtin_modules_disabled_map.items():
+            if enabled == "FALSE":
                 # Lookup the correct module name from the dictionary, fallback to default if missing
                 module_name = package_base_name + "_" + MODULE_NAME_MAPPING.get(module, module)  # If not in mapping, keep original
 
                 # Updated regex pattern to match only the correct module instantiation block
                 pattern = rf"{module_name}\s*#\([\s\S]*?\)\s*;"
 
-                # Apply the comment transformation (only on the first occurrence)
-                updated_content = re.sub(pattern, lambda match: "\n".join(["// " + line for line in match.group(0).split("\n")]), updated_content, flags=re.DOTALL, count=1)
-
+                # Special cdc_e case
+                if MODULE_NAME_MAPPING.get(module, module) == "bus_cdc_regs":
+                    updated_content = re.sub(pattern, lambda match: "\n".join(["// " + line for line in match.group(0).split("\n")]) + cdc_string, updated_content, flags=re.DOTALL, count=1)
+                else:
+                    # Apply the comment transformation (only on the first occurrence)
+                    updated_content = re.sub(pattern, lambda match: "\n".join(["// " + line for line in match.group(0).split("\n")]), updated_content, flags=re.DOTALL, count=1)
 
         # Define output file path inside the respective package directory
         folder_path = os.path.join(base_directory, package_base_name)  # Keep original folder name

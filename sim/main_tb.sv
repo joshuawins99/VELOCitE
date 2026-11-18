@@ -20,6 +20,10 @@ module main_tb;
     data_reg_inputs_t         cpu_data_i;
     logic                     cpu_halt_i;
 
+    logic [num_entries-1:0]   busy_bits;
+    logic [num_entries-1:0]   busy_enable;
+    logic [num_entries-1:0]   busy_reset_module;
+
     integer error_count = 0;
 
     localparam clk_per = (1/FPGAClkSpeed)*10^9;
@@ -47,18 +51,21 @@ module main_tb;
     endtask
 
     cpu_sim_top m1 (
-        .clk_i           (clk),
-        .reset_i         (reset),
-        .external_data_o (ex_data_o),
-        .external_data_i (ex_data_i),
-        .uart_rx_i       (uart_tx_o),
-        .uart_tx_o       (uart_rx_i),
-        .address         (address),
-        .cpu_data_o      (cpu_data_o),
-        .cpu_data_i      (cpu_data_i),
-        .cpu_halt_i      (cpu_halt_i),
-        .irq_i           ('0),
-        .cpu_we_o        (we_o)
+        .clk_i               (clk),
+        .reset_i             (reset),
+        .external_data_o     (ex_data_o),
+        .external_data_i     (ex_data_i),
+        .uart_rx_i           (uart_tx_o),
+        .uart_tx_o           (uart_rx_i),
+        .address_o           (address),
+        .cpu_data_o          (cpu_data_o),
+        .cpu_data_i          (cpu_data_i),
+        .cpu_halt_i          (cpu_halt_i),
+        .irq_i               ('0),
+        .cpu_we_o            (we_o),
+        .busy_bits_i         (busy_bits),
+        .busy_enable_o       (busy_enable),
+        .busy_reset_module_o (busy_reset_module)
     );
 
     cpu_sim_uart #(
@@ -106,10 +113,13 @@ module main_tb;
         .cdc_bypass_mask       ('0),
         .module_busy_en_mask   ('0)
     ) cdc_1 (
-        .cdc_clks_i       (cdc_clocks),
-        .cpubus_i         (cpubus),
-        .cpubus_o         (cdc_cpubus),
-        .busy_o           (cdc_busy)
+        .cdc_clks_i          (cdc_clocks),
+        .cpubus_i            (cpubus),
+        .cpubus_o            (cdc_cpubus),
+        .busy_o              (cdc_busy),
+        .busy_bits_o         (busy_bits),
+        .busy_enable_i       (busy_enable),
+        .busy_reset_module_i (busy_reset_module)
     );
 
     logic [data_width-1:0] test_cdc_register = '0;

@@ -13,10 +13,6 @@
 #define Version_String_BaseAddress 0x8000
 #endif
 
-#ifndef IO_CPU_BaseAddress
-#define IO_CPU_BaseAddress         0x9000
-#endif
-
 #ifndef UART_CPU_BaseAddress
 #define UART_CPU_BaseAddress       0x9100
 #endif

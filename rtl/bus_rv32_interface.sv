@@ -19,6 +19,9 @@ import cpu_reg_package::*;
     logic                     uart_rx_i;
     logic                     uart_rts_o;
     logic                     module_busy_i;
+    logic [num_entries-1:0]   busy_enable_o;
+    logic [num_entries-1:0]   busy_reset_module_o;
+    logic [num_entries-1:0]   busy_bits_i;
 
     modport to_cpu (
         input  clk_i,
@@ -53,7 +56,10 @@ import cpu_reg_package::*;
         output external_data_o,
         output uart_tx_o,
         input  uart_rx_i,
-        output uart_rts_o
+        output uart_rts_o,
+        input  busy_bits_i,
+        output busy_enable_o,
+        output busy_reset_module_o
     );
 
     modport cdc_in (

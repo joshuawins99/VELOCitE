@@ -22,7 +22,8 @@ BUILTIN_MODULES:
     version_string_e : TRUE : {'h8000, 'h8000+(VersionStringSize-1)*4}
     io_e             : TRUE : {'h9000, 'h900C}
     uart_e           : TRUE : {'h9100, 'h9110}
+    cdc_e            : TRUE : {'h9200, 'h920C}
     
 USER_MODULES:
-    test_cdc_e  : TRUE : {'h9200, 'h9200}
+    test_cdc_e  : TRUE : {'h9220, 'h9220}
     test_cdc2_e : TRUE : {'h9300, 'h9300}

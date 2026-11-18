@@ -6,10 +6,13 @@ import cpu_reg_package::*;
     parameter logic [num_entries-1:0] cdc_bypass_mask,
     parameter logic [num_entries-1:0] module_busy_en_mask
 )(
-    input logic      cdc_clks_i [num_entries],
-    bus_rv32.cdc_in  cpubus_i,
-    bus_rv32.cdc_out cpubus_o   [num_entries],
-    output logic     busy_o
+    input logic                    cdc_clks_i [num_entries],
+    bus_rv32.cdc_in                cpubus_i,
+    bus_rv32.cdc_out               cpubus_o   [num_entries],
+    output logic                   busy_o,
+    output logic [num_entries-1:0] busy_bits_o,
+    input  logic [num_entries-1:0] busy_enable_i, //Set to '1 if not using
+    input  logic [num_entries-1:0] busy_reset_module_i //Set to '0 is not using
 );
 
     //Function to take address and find the "index" from the packed array.
@@ -58,6 +61,7 @@ import cpu_reg_package::*;
     logic [num_entries-1:0]   transaction_pending = '0;
     logic                     module_busy_prev [num_entries];
     logic [num_entries-1:0]   cdc_bypass_busy;
+    logic [num_entries-1:0]   busy_reset_module;
 
     assign cpuside_cpu_reset   = cpubus_i.cpu_reset_o;
     assign cpuside_clk         = cpubus_i.clk_i;
@@ -69,9 +73,13 @@ import cpu_reg_package::*;
         data:    cpubus_i.data_o
     };
 
-    assign busy_o = |(transaction_pending[end_num_entry_index:start_num_entry_index]) | 
-                    |(busy_src[end_num_entry_index:start_num_entry_index]) |
-                    |(cdc_bypass_busy[end_num_entry_index:start_num_entry_index]);
+    assign busy_o = |(((transaction_pending[end_num_entry_index:start_num_entry_index]) | 
+                    (busy_src[end_num_entry_index:start_num_entry_index]) |
+                    (cdc_bypass_busy[end_num_entry_index:start_num_entry_index])) & busy_enable_i);
+
+    assign busy_bits_o = (transaction_pending[end_num_entry_index:start_num_entry_index]) | 
+                         (busy_src[end_num_entry_index:start_num_entry_index]) |
+                         (cdc_bypass_busy[end_num_entry_index:start_num_entry_index]);
 
     //Register incoming address to determine if its changed.
     always_ff @(posedge cpuside_clk) begin
@@ -88,7 +96,7 @@ import cpu_reg_package::*;
                 assign cpubus_o[i].we_ram_o    = cpubus_i.we_ram_o;
                 assign cpubus_o[i].address_o   = cpubus_i.address_o;
                 assign cpubus_o[i].data_o      = cpubus_i.data_o;
-                assign cpubus_o[i].cpu_reset_o = cpubus_i.cpu_reset_o;
+                assign cpubus_o[i].cpu_reset_o = cpubus_i.cpu_reset_o | busy_reset_module_i[i];
 
                 always_comb begin
                     if (module_busy_en_mask[i] == 1) begin
@@ -190,7 +198,18 @@ import cpu_reg_package::*;
                 assign data_module_to_cpu[i].we_ram  = '0;
 
                 assign cpubus_o[i].clk_o             = cdc_clks_i[i];
-                assign cpubus_o[i].cpu_reset_o       = moduleside_cpu_reset[i];
+
+                edge_synchronizer #(
+                    .EdgeType               ("Rising"),
+                    .PulseWidth             (5)
+                ) cdc_busy_reset_inst (
+                    .clk_src_i              (cpuside_clk),
+                    .clk_dst_i              (cdc_clks_i[i]),
+                    .signal_src_i           (busy_reset_module_i[i]),
+                    .signal_dst_o           (busy_reset_module[i])
+                );
+
+                assign cpubus_o[i].cpu_reset_o       = moduleside_cpu_reset[i] | busy_reset_module[i];
 
                 //Pulse bus signals in clk_dst_i domain to act the same as in main clk domain.
                 //If not pulsed, will cause erroneous writes into sync_to_cpu fifo.

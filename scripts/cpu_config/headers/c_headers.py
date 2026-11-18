@@ -58,6 +58,11 @@ typedef struct {{
    RegisterBase type;
 }} RegisterReadWrite;
 
+typedef struct {{
+    const char *name;
+    size_t idx;
+}} ModuleEnum;
+
 static inline uintptr_t RegAt(CompactRegisterBlock blk, size_t index) {{
     return blk.base + index * blk.address_wording;
 }}
@@ -314,6 +319,17 @@ static inline uint8_t Read8_RW(RegisterReadWrite reg) {{
                 if not new_c_header:
                     c_lines.extend(c_addr_macros)
                     c_lines.append(f"static const CompactRegisterBlock {module_id} = {{ 0x{start_addr:04X}, {reg_count}, {reg_width_bytes} }};\n")
+
+        if new_c_header: # Add module name to index struct
+            c_module_storage.append("static const ModuleEnum module_names_idx[] = {")
+            idx = 0
+            for section in module_sections:
+                for module_name, module in cpu_config.get(section, {}).items():
+                    if module["flag"] == "TRUE":
+                        c_module_storage.append(f'    {{"{module_name}", {idx}}},')
+                        idx += 1
+            c_module_storage[-1] = c_module_storage[-1].rstrip(",") #Remove comma from last entry
+            c_module_storage.append("};")
 
         if new_c_header:
             for entry in c_module_storage:

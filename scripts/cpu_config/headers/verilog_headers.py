@@ -23,7 +23,8 @@ def export_verilog_headers(parsed_configs, submodule_reg_map, directory_path, re
         try:
             submodule_separator = current_submodule_map[0].separator
         except:
-            print(f"Warning: Verilog headers not generated due to no submodules")
+            if verilog_muxes:
+                print(f"Warning: Verilog muxes not generated due to no submodules")
             submodule_separator = " "
             generate_files = False
         mod_reg_package = []
@@ -325,13 +326,13 @@ endmodule
         for item in local_regs_package_mask_list:
             regs_package_mask_list.append(item)
 
-        if not file_per_module and generate_files:
-                if verilog_muxes:
-                    with open(verilog_filename, "w") as f:
-                        f.write("\n".join(verilog_lines))
-                        print(f"Verilog mux modules and packages for '{cpu_name}' saved to: {os.path.abspath(verilog_filename)}")
-                if verilog_regs:
-                    with open(verilog_reg_filename, "w") as f:
-                        f.write("\n".join(mod_reg_package))
-                        print(f"Verilog register modules and packages for '{cpu_name}' saved to: {os.path.abspath(verilog_reg_filename)}")
+        if not file_per_module:
+            if verilog_muxes and generate_files:
+                with open(verilog_filename, "w") as f:
+                    f.write("\n".join(verilog_lines))
+                    print(f"Verilog mux modules and packages for '{cpu_name}' saved to: {os.path.abspath(verilog_filename)}")
+            if verilog_regs:
+                with open(verilog_reg_filename, "w") as f:
+                    f.write("\n".join(mod_reg_package))
+                    print(f"Verilog register modules and packages for '{cpu_name}' saved to: {os.path.abspath(verilog_reg_filename)}")
                 
