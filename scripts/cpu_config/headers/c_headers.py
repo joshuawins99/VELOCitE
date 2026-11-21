@@ -325,7 +325,8 @@ static inline uint8_t Read8_RW(RegisterReadWrite reg) {{
             idx = 0
             for section in module_sections:
                 for module_name, module in cpu_config.get(section, {}).items():
-                    if module["flag"] == "TRUE":
+                    is_submodule = True if module.get("submodule_of", None) else False
+                    if module["flag"] == "TRUE" and not is_submodule: # Dont include submodules for now
                         c_module_storage.append(f'    {{"{module_name}", {idx}}},')
                         idx += 1
             c_module_storage[-1] = c_module_storage[-1].rstrip(",") #Remove comma from last entry

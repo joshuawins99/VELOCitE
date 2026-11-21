@@ -213,17 +213,6 @@ endpackage
                 if num_ports < 1: #If num_ports less than 1, then dont output
                     continue
 
-                # Documentation
-                if not local_mux_package_mask_list.count(stripped_name_compare_value) > 1:
-                    if not mux_package_mask_list.count(stripped_name_compare_value) > 1:
-                        verilog_lines.append(f"// Module: {mod_name_str} ({module_name.split(submodule_separator)[-1]})")
-                        if mod_desc_str:
-                            desc_lines = mod_desc_str.split('\n')
-                            formatted_desc = f"// Module Description: {desc_lines[0]}"
-                            for line in desc_lines[1:]:
-                                formatted_desc += f"\n//                     {line}"
-                            verilog_lines.append(formatted_desc)
-
                 if not verilog_module_names and generated_naming_option == "enumeration":
                     package_module_naming = module_name if not strip_verilog else module_name.split(submodule_separator)[-1]
                 else:
@@ -235,9 +224,27 @@ endpackage
 
                 verilog_boilerplate = ""
 
-                if not local_mux_package_mask_list.count(stripped_name_compare_value) > 1:
-                    if not mux_package_mask_list.count(stripped_name_compare_value) > 1:
-                        verilog_boilerplate = f"""\
+                # Documentation
+                if not local_mux_package_mask_list.count(package_module_naming) >= 1:
+                    if not mux_package_mask_list.count(package_module_naming) >= 1:
+                        if not local_mux_package_mask_list.count(stripped_name_compare_value) > 1:
+                            if not mux_package_mask_list.count(stripped_name_compare_value) >= 1:
+                                if generated_naming_option == "module":
+                                    verilog_lines.append(f"// Module: {mod_name_str}")
+                                else:
+                                    verilog_lines.append(f"// Module: {mod_name_str} ({module_name.split(submodule_separator)[-1]})")
+                                if mod_desc_str:
+                                    desc_lines = mod_desc_str.split('\n')
+                                    formatted_desc = f"// Module Description: {desc_lines[0]}"
+                                    for line in desc_lines[1:]:
+                                        formatted_desc += f"\n//                     {line}"
+                                    verilog_lines.append(formatted_desc)
+
+                if not local_mux_package_mask_list.count(package_module_naming) >= 1:
+                    if not mux_package_mask_list.count(package_module_naming) >= 1:
+                        if not local_mux_package_mask_list.count(stripped_name_compare_value) > 1:
+                            if not mux_package_mask_list.count(stripped_name_compare_value) >= 1:
+                                verilog_boilerplate = f"""\
 package {package_module_naming}_mux_package;
     {mod_params_base_address_joined}
     {mod_params_reg_count_joined}
@@ -308,17 +315,21 @@ module {package_module_naming}_mux #(
 
 endmodule
 """
-                if not local_mux_package_mask_list.count(stripped_name_compare_value) > 1:
-                    if not mux_package_mask_list.count(stripped_name_compare_value) > 1:
-                        verilog_lines.append(verilog_boilerplate)
+                if not local_mux_package_mask_list.count(package_module_naming) >= 1:
+                    if not mux_package_mask_list.count(package_module_naming) >= 1:
+                        if not local_mux_package_mask_list.count(stripped_name_compare_value) > 1:
+                            if not mux_package_mask_list.count(stripped_name_compare_value) >= 1:
+                                verilog_lines.append(verilog_boilerplate)
 
                 if file_per_module and generate_files and package_module_naming:
                     verilog_filename = os.path.join(directory_path, output_dir, f"{cpu_name}_{package_module_naming}_muxes.sv")
-                    if verilog_muxes:
+                    if verilog_muxes and not local_mux_package_mask_list.count(package_module_naming) >= 1:
                         with open(verilog_filename, "w") as f:
                             f.write("\n".join(verilog_lines))
                             print(f"Verilog mux modules and packages for '{package_module_naming}' on '{cpu_name}' saved to: {os.path.abspath(verilog_filename)}")
                             verilog_lines = []
+
+                local_mux_package_mask_list.append(package_module_naming)
 
         for item in local_mux_package_mask_list:
             mux_package_mask_list.append(item)

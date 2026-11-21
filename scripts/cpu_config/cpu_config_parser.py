@@ -25,6 +25,7 @@ def parse_config(file_path, updated_name):
     include_file_dirs = []
     got_module_name = False
     got_module_description = False
+    got_generated_naming = False
     config_include_list_named_tuple = namedtuple("config_include_list_named_tuple", ["config_path", "updated_name"])
     config_include_list = []
     module_list = []
@@ -181,6 +182,7 @@ def parse_config(file_path, updated_name):
             got_register_description = False
             got_module_name = False
             got_module_description = False
+            got_generated_naming = False
             
             if got_submodule:
                 config_data[current_section][key] = {
@@ -228,6 +230,7 @@ def parse_config(file_path, updated_name):
             got_register_description = False
             got_module_name = False
             got_module_description = False
+            got_generated_naming = False
 
             if got_submodule:
                 config_data[current_section][key] = {
@@ -274,6 +277,7 @@ def parse_config(file_path, updated_name):
             got_register_description = False
             got_module_name = False
             got_module_description = False
+            got_generated_naming = False
 
             if got_submodule:
                 config_data[current_section][key] = {
@@ -322,6 +326,7 @@ def parse_config(file_path, updated_name):
             got_register_description = False
             got_module_name = False
             got_module_description = False
+            got_generated_naming = False
 
             if got_submodule:
                 config_data[current_section][key] = {
@@ -369,11 +374,13 @@ def parse_config(file_path, updated_name):
         elif current_module and generated_naming_match:
             generated_naming_type = generated_naming_match.group(1)
             generated_naming_types = ["module", "module_sub", "enumeration"]
-            if generated_naming_type in generated_naming_types:
-                config_data[current_section][current_module]["metadata"]["generated_naming"] = generated_naming_type
-            else:
-                generated_naming_types_str = ", ".join(generated_naming_types)
-                raise SyntaxError(f"'Generated_Naming :' line for '{current_module}' is not valid. Accepted types are: '{generated_naming_types_str}'")
+            if not got_generated_naming:
+                if generated_naming_type in generated_naming_types:
+                    config_data[current_section][current_module]["metadata"]["generated_naming"] = generated_naming_type
+                    got_generated_naming = True
+                else:
+                    generated_naming_types_str = ", ".join(generated_naming_types)
+                    raise SyntaxError(f"'Generated_Naming :' line for '{current_module}' is not valid. Accepted types are: '{generated_naming_types_str}'")
 
         elif current_register and field_match:
             current_field = field_match.group(1)
